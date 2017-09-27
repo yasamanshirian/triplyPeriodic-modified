@@ -29,6 +29,7 @@ params::params(char *address)
   param_trimmed_in>>Data_freq_fast_>>Data_freq_slow_;
   param_trimmed_in>>Data_dir_>>Stat_dir_;
   param_trimmed_in>>Initial_;
+  param_trimmed_in>>Initial_C;
   param_trimmed_in>>PreCond_>>Solver_;
   param_trimmed_in>>cooling_;
   param_trimmed_in>>Iteration1_>>Iteration2_>>epsilon_;
