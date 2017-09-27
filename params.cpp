@@ -46,6 +46,7 @@ params::params(char *address)
   param_trimmed_in>>epsilonp_;
   param_trimmed_in>>Nu_;
   param_trimmed_in>>I01_>>I02_;
+  param_trimmed_in>>Sc;
   
   //initially update parameters
   R_=Cp_-Cv_;
