@@ -17,7 +17,7 @@ params::params(char *address)
       if ((int(input_line[0])!=0)&&(int(input_line[0])!=35)) param_trimmed_out<<input_line<<std::endl;
     }
   param.close();
-  //copies a string we pass to it 
+  //copies a string we pass to it
   std::istringstream param_trimmed_in(param_trimmed_out.str());  
   
   param_trimmed_in>>Nx_tot_>>Ny_tot_>>Nz_tot_;
