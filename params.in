@@ -1,0 +1,80 @@
+######################################INPUT PARAMETER FILE###############################
+#DO NOT CHANGE THE ORDER OF PARAMETERS BUT YOU CAN ADD COMMENT USING HASH TAG => EACH LINE BEGINS WITH: HASH OR DATA OR NULL
+
+#Nx_tot #Ny_tot #Nz_tot
+32 32 32
+
+#Lx #Ly #Lz
+6.2832 6.2832 6.2832
+
+#BorderSize (=1 for 2nd order central difference)
+1
+
+#Number of particles to be tracked in the text file
+0
+
+#Tfinal #dt #threshold(to change parameters)
+70 1 70
+
+#statistics_calculation (1:on 0:off)  #statistics_print_to_screen (1:on 0:off)
+1 1
+
+#data_frequency_fast(only save rho u)  #data_frequency_slow(save P C Vp and Rho)
+500 500
+
+#data_saving_directory  #statistics_saving_directory
+data/ stat/
+
+#Initial condition (0: from U.bin,V.bin,W.bin  1:from Restart.bin  2:Everything Uniform 3:TaylorGreenX 4:TaylorGreenY 5:TaylorGreenZ)
+0
+
+#Preconditioner:(0:Nothing 1:AMG 2:Euclid)  #Solver(0:FFT 1:AMG 2:PCG 3:GMRES 4:FlexGMRES 5:LGMRES 6:BiCGSTAB)	
+0 0
+
+#Cooling (0:off 1:on)
+0
+
+#Maximum_Number_of_iteration1 #Maximum_Number_of_iteration2 #convergence_criterion
+1 30 1e-7
+
+#Momentum_Two_Way_Coupling (0:off 1:on)  #Exert_Garavity_To_Particle (0:off 1:on)
+0 0
+
+#A1 #A2
+0.1616 0.1616
+
+#Rho0
+1.2
+
+#U0 (convective velocity in x direction)
+0
+
+#T0
+300
+
+#Mu0 #k
+1.9e-5 .0275
+
+#gx1 #gy1 #gz1 #gx2 #gy2 #gz2
+0 0 0 0 0 0
+
+#Cp #Cv
+1012 723
+
+#np0
+0
+
+#Dp #Rhop
+1.2e-5 8900
+
+#Cvp
+400
+
+#epsilon_p
+1
+
+#Nu (Nuselt number)
+2
+
+#I0_1 #I0_2 (lamp intensity)
+0 4687500
