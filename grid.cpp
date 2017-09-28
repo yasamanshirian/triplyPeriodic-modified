@@ -7,7 +7,7 @@
 #include "communicator.h"
 #include "grid.h"
 
-grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),C(s,com),Rho(s,com),Rho_int(s,com),Rho_new(s,com),Rho_np1(s,com),RHS_Rho(s,com),Rho_face(s,com),T(s,com),dummy(s,com),dummy2(s,com),divergence(s,com),RHS_Part_Temp(s,com),PS_(p,pc,s,com),part(p,pc,s)
+grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),Scalar_Concentration_int(s,comm),Scalar_Concentration_new(s,comm),Scalar_Concentration_np1(s,comm),Scalar_Concentration_face(s,comm), RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),C(s,com),Rho(s,com),Rho_int(s,com),Rho_new(s,com),Rho_np1(s,com),RHS_Rho(s,com),Rho_face(s,com),T(s,com),dummy(s,com),dummy2(s,com),divergence(s,com),RHS_Part_Temp(s,com),PS_(p,pc,s,com),part(p,pc,s)
 {
   size_=s;
   param_=p;
@@ -237,15 +237,32 @@ void grid::Initialize()
       T_cur=0;
       num_timestep=0;
     }
+    
+    if (param_->Initial_C()==1)
+    {
+        //These files are initial condition for timestep=num_timestep
+        com_->read(Scalar_Concentration,"Restart_Scalar_Concentration.bin");
+        if (pc_->IsRoot()) std::cout<<"*+=*+=*+=*+=Scalar_Concentration LOADED*+=*+=*+=*+="<<std::endl;
+    }
+    
+    if (param_->Initial_C()==0)
+    {
+        com_->read(Scalar_Concentration,"C.bin");
+
+    }
+    
   //prepare variables for time integration loop
   RU_int=RU;
   RU_np1=RU;
+  Scalar_Concentration_int = Scalar_Concentration;
+  Scalar_Concentration_np1 = Scalar_Concentration;
   Rho_int=Rho;
   Rho_np1=Rho;
   P0_int=P0;
   P0_np1=P0;
   //Need to compute rho at faces once here, after this, Compute_RHS_Pois computes it
   Rho_face.Equal_I_C2F(Rho);
+  Scalar_Concentration_face.equal_I_C2F(Scalar_Concentration);
   //particle part
   part.x_int=part.x; part.y_int=part.y; part.z_int=part.z; part.u_int=part.u; part.v_int=part.v; part.w_int=part.w; part.T_int=part.T;
   part.x_np1=part.x; part.y_np1=part.y; part.z_np1=part.z; part.u_np1=part.u; part.v_np1=part.v; part.w_np1=part.w; part.T_np1=part.T;
@@ -325,6 +342,7 @@ void grid::Store()
 void grid::TimeAdvance()
 {
   Rho=Rho_np1;
+  Scalar_Concentration = Scalar_Concentration_np1;
   RU=RU_np1;
   P0=P0_np1;
   part.x=part.x_np1; part.y=part.y_np1; part.z=part.z_np1; part.u=part.u_np1; part.v=part.v_np1; part.w=part.w_np1; part.T=part.T_np1;
@@ -339,6 +357,16 @@ void grid::Update_Rho()
   if (RK4_count!=3) Rho_new.Equal_LinComb(1,Rho,-param_->dt()*RK4_preCoeff[RK4_count],RHS_Rho); //update Rho_new
   else Rho_new=Rho_np1;
 }
+
+void grid::Update_Scalar_Concentration()
+{
+    //RHS_Scalar_Concentration.Equal_Div_F2C(Scalar_Concentration_int); //In fact, here we compute minus RHS_Scalar_Concentration, i.e. div(RU)
+    Scalar_Concentration_np1.PlusEqual_Mult(-(param_->dt()*RK4_postCoeff[RK4_count]),RHS_Scalar_Concentration); //Update Scalar_Concentration_np1
+    if (RK4_count!=3) C_new.Equal_LinComb(1,Scalar_Concentration,-param_->dt()*RK4_preCoeff[RK4_count],RHS_Scalar_Concentration); //update Scalar_Concentration_new
+    else Scalar_Concentration_new=Scalar_Concentration_np1;
+}
+
+
 
 void grid::Update_RU_WOP()
 {
