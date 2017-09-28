@@ -30,14 +30,14 @@ int main (int argc,char *argv[] )
       for (GRID.RK4_count=0;GRID.RK4_count<4;GRID.RK4_count++)
 	{
 	  GRID.Update_Rho();
-	  //GRID.Update_P0();
-	  //GRID.Update_Particle();
+	  GRID.Update_P0();
+	  GRID.Update_Particle();
 	  GRID.Update_RU_WOP(); 
-	  //GRID.Compute_Div_U_new();
-	  //GRID.Compute_RHS_Pois();
-	  //GRID.Solve_Poisson();
+	  GRID.Compute_Div_U_new();
+	  GRID.Compute_RHS_Pois();
+	  GRID.Solve_Poisson();
 	  GRID.Update_RU_WP();
-	  GRID.Update_C();
+	  GRID.Update_Scalar_Concentration();
 	  GRID.TimeAdvance_RK4();
 	}
       GRID.RU_np1.make_mean_zero();
