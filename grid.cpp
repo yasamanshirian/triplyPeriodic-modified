@@ -487,6 +487,7 @@ void grid::TimeAdvance_RK4()
   Rho_int=Rho_new;
   RU_int=RU_new;
   P0_int=P0_new;
+  Scalar_Concentration_int = Scalar_Concentration_new;
   //particle part
   part.x_int=part.x_new; part.y_int=part.y_new; part.z_int=part.z_new; part.u_int=part.u_new; part.v_int=part.v_new; part.w_int=part.w_new; part.T_int=part.T_new;
 }
