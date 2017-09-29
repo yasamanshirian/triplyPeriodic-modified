@@ -360,11 +360,13 @@ void grid::Update_Rho()
 
 void grid::Update_Scalar_Concentration()
 {
-    UC.Equal_Mult(U,Scalar_Concentration_face);//computing u_int at faces, note: we have already computed Rho_face i
+    UC.Equal_Mult(U,Scalar_Concentration_face);//computing u_int at faces, note: we have already computed Scalar_Concentration_face in last RK4 step
     RHS_Scalar_Concentration.Equal_Div_F2C(UC); //In fact, here we compute minus RHS_Scalar_Concentration, i.e. div(RU)
     Scalar_Concentration_np1.PlusEqual_Mult(-(param_->dt()*RK4_postCoeff[RK4_count]),RHS_Scalar_Concentration); //Update Scalar_Concentration_np1
     if (RK4_count!=3) Scalar_Concentration_new.Equal_LinComb(1,Scalar_Concentration,-param_->dt()*RK4_preCoeff[RK4_count],RHS_Scalar_Concentration); //update Scalar_Concentration_new
     else Scalar_Concentration_new=Scalar_Concentration_np1;
+    
+    Scalar_Concentration_face.equal_I_C2F(Scalar_Concentration_new);
 }
 
 
