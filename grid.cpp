@@ -262,6 +262,7 @@ void grid::Initialize()
   P0_np1=P0;
   //Need to compute rho at faces once here, after this, Compute_RHS_Pois computes it
   Rho_face.Equal_I_C2F(Rho);
+  //Need to compute Scalar_Concentration at faces once here, after this, Update_Scalar_Concentration computes it
   Scalar_Concentration_face.equal_I_C2F(Scalar_Concentration);
   //particle part
   part.x_int=part.x; part.y_int=part.y; part.z_int=part.z; part.u_int=part.u; part.v_int=part.v; part.w_int=part.w; part.T_int=part.T;
@@ -303,6 +304,12 @@ void grid::Store()
       filename_out_Data<<param_->data_dir()<<"RU"<<"_"<<num_timestep<<".bin";
       std::string filename=filename_out_Data.str();
       com_->write(RU,(char*)(filename.c_str()));
+        
+      filename_out_Data.str("");
+      filename_out_Data.clear();
+      filename_out_Data<<param_->data_dir()<<"C"<<"_"<<num_timestep<<".bin";
+      filename=filename_out_Data.str();
+      com_->write(Scalar_Concentration,(char*)(filename.c_str()));
       if (pc_->IsRoot())
 	{
 	  filename_out_Data.str("");
@@ -360,7 +367,7 @@ void grid::Update_Rho()
 
 void grid::Update_Scalar_Concentration()
 {
-    UC.Equal_Mult(U,Scalar_Concentration_face);//computing u_int at faces, note: we have already computed Scalar_Concentration_face in last RK4 step
+    UC.Equal_Mult(U,Scalar_Concentration_face);//computing u_int at faces, note: we have already computed Scalar_Concentration_face in previous RK4 substep
     RHS_Scalar_Concentration.Equal_Div_F2C(UC); //In fact, here we compute minus RHS_Scalar_Concentration, i.e. div(RU)
     Scalar_Concentration_np1.PlusEqual_Mult(-(param_->dt()*RK4_postCoeff[RK4_count]),RHS_Scalar_Concentration); //Update Scalar_Concentration_np1
     if (RK4_count!=3) Scalar_Concentration_new.Equal_LinComb(1,Scalar_Concentration,-param_->dt()*RK4_preCoeff[RK4_count],RHS_Scalar_Concentration); //update Scalar_Concentration_new
