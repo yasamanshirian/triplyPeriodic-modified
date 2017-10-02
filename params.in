@@ -28,7 +28,7 @@ data/ stat/
 #Initial condition (0: from U.bin,V.bin,W.bin  1:from Restart.bin  2:Everything Uniform 3:TaylorGreenX 4:TaylorGreenY 5:TaylorGreenZ)
 0
 
-#Initial condition for C (0: from C.bin  1:from Restart.bin)
+#Initial condition for C (0: from Scalar_Conecentration.bin  1:from Restart_Scalar_Conecentration.bin)
 0
 
 #Preconditioner:(0:Nothing 1:AMG 2:Euclid)  #Solver(0:FFT 1:AMG 2:PCG 3:GMRES 4:FlexGMRES 5:LGMRES 6:BiCGSTAB)	
@@ -82,5 +82,8 @@ data/ stat/
 #I0_1 #I0_2 (lamp intensity)
 0 4687500
 
-#Sc (schmidt number)
+#D_m (Molecular diffusivity)
 10
+
+#Hyperparameters in source function of scalar transfer equation
+2 6.2832
