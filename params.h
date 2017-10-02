@@ -39,7 +39,7 @@ class params
   double Cvp_; //particel specific heat coeff.
   double epsilonp_; //particle emissivity
   double I0_,I01_,I02_; //lamp intensity
-  double D_;//Molecular diffusivity
+  double D_M_;//Molecular diffusivity
   double A_g_, K_g_;//source function parameters for scalar concentration transfer equation
   double Nu_; //Nusselt number
   double Tp_; //Particle momentum relaxation time
@@ -60,7 +60,7 @@ class params
   double I0() {return I0_;}
   double I01() {return I01_;}
   double I02() {return I02_;}
-  double D() {return D_;}
+  double D_M() {return D_M_;}
   double A_g() {return A_g_;}
   double K_g() {return K_g_;}
   double epsilonp() {return epsilonp_;}
@@ -99,7 +99,7 @@ class params
   double Fr() const { return U0_/sqrt(gz_*W_); } //assume gravity in z direction is the reference g
   double St() const { return N0()*mp_/(Lx_*Ly_*Lz_*Rho0_); }
   double Pr() const { return Mu0_*Cp_/k_; }
-  double Sc() const { return Rho0_/(Mu0_*D_)}
+  double Sc() const { return Rho0_/(Mu0_*D_M_)}
   double gamma() const { return Cp_/Cv_; }
   double GAMMA() const { return Cvp_/Cv_; }
 
