@@ -17,7 +17,7 @@ class params
   std::string Data_dir_; //data storage directory
   std::string Stat_dir_; //statistics storage directory
   int Initial_; //0:initial turbulence from U/V/W .bin  1: Restart.bin 2: everything is uniform  3: TaylorGreen
-  int Initial_C_; //0:initial turbulence from C .bin  1: Restart.bin
+  int Initial_C_; //0:initial turbulence from Scalar_Concentration.bin  1: Restart_Scalar_Concentration.bin
   int PreCond_,Solver_; //determine preconditioner and solver
   bool cooling_; //0:if coling is off 1:if cooling is on
   int Iteration_,Iteration1_,Iteration2_; // Number of iteration in Poisson iterative solve before and after threshold
@@ -40,6 +40,7 @@ class params
   double epsilonp_; //particle emissivity
   double I0_,I01_,I02_; //lamp intensity
   double D_;//Molecular diffusivity
+  double A_g_, K_g_;//source function parameters for scalar concentration transfer equation
   double Nu_; //Nusselt number
   double Tp_; //Particle momentum relaxation time
   double mp_; //particle mass
@@ -60,6 +61,8 @@ class params
   double I01() {return I01_;}
   double I02() {return I02_;}
   double D() {return D_;}
+  double A_g() {return A_g_;}
+  double K_g() {return K_g_;}
   double epsilonp() {return epsilonp_;}
   double Cvp() {return Cvp_;}
   double Rhop() {return Rhop_;}
