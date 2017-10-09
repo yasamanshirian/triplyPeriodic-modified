@@ -40,7 +40,7 @@ class params
   double epsilonp_; //particle emissivity
   double I0_,I01_,I02_; //lamp intensity
   double D_M_;//Molecular diffusivity
-  double A_g_, K_g_;//source function parameters for scalar concentration transfer equation
+  double A_g_, B_g_, K_g_;//source function parameters for scalar concentration transfer equation
   double Nu_; //Nusselt number
   double Tp_; //Particle momentum relaxation time
   double mp_; //particle mass
@@ -62,6 +62,7 @@ class params
   double I02() {return I02_;}
   double D_M() {return D_M_;}
   double A_g() {return A_g_;}
+  double B_g() {return B_g_;}
   double K_g() {return K_g_;}
   double epsilonp() {return epsilonp_;}
   double Cvp() {return Cvp_;}
