@@ -263,7 +263,7 @@ void grid::Initialize()
   //Need to compute rho at faces once here, after this, Compute_RHS_Pois computes it
   Rho_face.Equal_I_C2F(Rho);
   //Need to compute Scalar_Concentration at faces once here, after this, Update_Scalar_Concentration computes it
-  Scalar_Concentration_face.equal_I_C2F(Scalar_Concentration);
+ Scalar_Concentration_face.equal_I_C2F(Scalar_Concentration);
   //particle part
   part.x_int=part.x; part.y_int=part.y; part.z_int=part.z; part.u_int=part.u; part.v_int=part.v; part.w_int=part.w; part.T_int=part.T;
   part.x_np1=part.x; part.y_np1=part.y; part.z_np1=part.z; part.u_np1=part.u; part.v_np1=part.v; part.w_np1=part.w; part.T_np1=part.T;
@@ -379,7 +379,7 @@ void grid::C_Source()
                 X=size_->dx()/2.+i*size_->dx();
                 Y=size_->dy()/2.+j*size_->dy();
                 Z=size_->dz()/2.+k*size_->dz();
-                g(I,J,K)=param_->A_g*cos(param_->K_g*X);//user can manually change this function to the desired one
+                g(I,J,K)=param_->A_g*cos(param_->K_g*X) + B_g*sin(param_->K_g*X);//user can manually change this function to the desired one
             }
 }
 
@@ -387,8 +387,11 @@ void grid::Update_Scalar_Concentration()
 {
     UC.Equal_Mult(U,Scalar_Concentration_face);//computing u_int at faces, note: we have already computed Scalar_Concentration_face in previous RK4 substep
     RHS_Scalar_Concentration.Equal_Div_F2C(UC); //In fact, here we compute minus RHS_Scalar_Concentration, i.e. div(RU)
+    dummy.Equal_Del2(Scalar_Concentration_int);//div(grad(C))
     grid::C_Source();
     RHS_Scalar_Concentration+=g;
+    dummy.Equal_LinComb(param_->D_M(),dummy);
+    RHS_Scalar_Concentration+=dummy;
     Scalar_Concentration_np1.PlusEqual_Mult(-(param_->dt()*RK4_postCoeff[RK4_count]),RHS_Scalar_Concentration); //Update Scalar_Concentration_np1
     if (RK4_count!=3) Scalar_Concentration_new.Equal_LinComb(1,Scalar_Concentration,-param_->dt()*RK4_preCoeff[RK4_count],RHS_Scalar_Concentration); //update Scalar_Concentration_new
     else Scalar_Concentration_new=Scalar_Concentration_np1;
