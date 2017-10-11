@@ -263,7 +263,7 @@ void grid::Initialize()
   //Need to compute rho at faces once here, after this, Compute_RHS_Pois computes it
   Rho_face.Equal_I_C2F(Rho);
   //Need to compute Scalar_Concentration at faces once here, after this, Update_Scalar_Concentration computes it
- Scalar_Concentration_face.equal_I_C2F(Scalar_Concentration);
+ Scalar_Concentration_face.Equal_I_C2F(Scalar_Concentration);
   //particle part
   part.x_int=part.x; part.y_int=part.y; part.z_int=part.z; part.u_int=part.u; part.v_int=part.v; part.w_int=part.w; part.T_int=part.T;
   part.x_np1=part.x; part.y_np1=part.y; part.z_np1=part.z; part.u_np1=part.u; part.v_np1=part.v; part.w_np1=part.w; part.T_np1=part.T;
