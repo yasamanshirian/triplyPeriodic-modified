@@ -48,7 +48,7 @@ params::params(char *address)
   param_trimmed_in>>Nu_;
   param_trimmed_in>>I01_>>I02_;
   param_trimmed_in>>D_M_;
-  param_trimmed_in>>A_g_>>K_g_;
+  param_trimmed_in>>A_g_>>B_g_>>K_g_;
   
   //initially update parameters
   R_=Cp_-Cv_;
