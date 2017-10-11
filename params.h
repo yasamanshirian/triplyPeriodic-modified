@@ -100,7 +100,7 @@ class params
   double Fr() const { return U0_/sqrt(gz_*W_); } //assume gravity in z direction is the reference g
   double St() const { return N0()*mp_/(Lx_*Ly_*Lz_*Rho0_); }
   double Pr() const { return Mu0_*Cp_/k_; }
-  double Sc() const { return Rho0_/(Mu0_*D_M_)}
+  double Sc() const { return Rho0_/(Mu0_*D_M_);}
   double gamma() const { return Cp_/Cv_; }
   double GAMMA() const { return Cvp_/Cv_; }
 
@@ -118,6 +118,7 @@ class params
   bool Statistics() const{return Statistics_;}
   bool Stat_print() const{return Stat_print_;}
   int Initial() const{return Initial_;}
+  int Initial_C() const{return Initial_C_;}
   int Iteration() {return Iteration_;}
   int Iteration1() const{return Iteration1_;}
   int Iteration2() const{return Iteration2_;}

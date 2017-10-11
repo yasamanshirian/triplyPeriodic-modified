@@ -7,7 +7,7 @@
 #include "communicator.h"
 #include "grid.h"
 
-grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),Scalar_Concentration_int(s,comm),Scalar_Concentration_new(s,comm),Scalar_Concentration_np1(s,comm),Scalar_Concentration_face(s,comm),g(s,comm), CU(s,comm), RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),C(s,com),Rho(s,com),Rho_int(s,com),Rho_new(s,com),Rho_np1(s,com),RHS_Rho(s,com),Rho_face(s,com),T(s,com),dummy(s,com),dummy2(s,com),divergence(s,com),RHS_Part_Temp(s,com),PS_(p,pc,s,com),part(p,pc,s)
+grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),Scalar_Concentration_int(s,com),Scalar_Concentration_new(s,com),Scalar_Concentration_np1(s,com),Scalar_Concentration_face(s,com),g(s,com), RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),C(s,com),Rho(s,com),Rho_int(s,com),Rho_new(s,com),Rho_np1(s,com),RHS_Rho(s,com),Rho_face(s,com),T(s,com),dummy(s,com),dummy2(s,com),dummyS(s,com)divergence(s,com),RHS_Part_Temp(s,com),PS_(p,pc,s,com),part(p,pc,s),UC(s,com)
 {
   size_=s;
   param_=p;
@@ -379,7 +379,7 @@ void grid::C_Source()
                 X=size_->dx()/2.+i*size_->dx();
                 Y=size_->dy()/2.+j*size_->dy();
                 Z=size_->dz()/2.+k*size_->dz();
-                g(I,J,K)=param_->A_g*cos(param_->K_g*X) + B_g*sin(param_->K_g*X);//user can manually change this function to the desired one
+                g(I,J,K)=param_->A_g()*cos(param_->K_g()*X) + param_->B_g()*sin(param_->K_g()*X);//user can manually change this function to the desired one
             }
 }
 
@@ -387,16 +387,16 @@ void grid::Update_Scalar_Concentration()
 {
     UC.Equal_Mult(U,Scalar_Concentration_face);//computing u_int at faces, note: we have already computed Scalar_Concentration_face in previous RK4 substep
     RHS_Scalar_Concentration.Equal_Div_F2C(UC); //In fact, here we compute minus RHS_Scalar_Concentration, i.e. div(RU)
-    dummy.Equal_Del2(Scalar_Concentration_int);//div(grad(C))
+    dummyS.Equal_Del2(Scalar_Concentration_int);//div(grad(C))
     grid::C_Source();
     RHS_Scalar_Concentration+=g;
-    dummy.Equal_LinComb(param_->D_M(),dummy);
-    RHS_Scalar_Concentration+=dummy;
+    dummyS.Equal_Mult(param_->D_M(),dummyS);
+    RHS_Scalar_Concentration+=dummyS;
     Scalar_Concentration_np1.PlusEqual_Mult(-(param_->dt()*RK4_postCoeff[RK4_count]),RHS_Scalar_Concentration); //Update Scalar_Concentration_np1
     if (RK4_count!=3) Scalar_Concentration_new.Equal_LinComb(1,Scalar_Concentration,-param_->dt()*RK4_preCoeff[RK4_count],RHS_Scalar_Concentration); //update Scalar_Concentration_new
     else Scalar_Concentration_new=Scalar_Concentration_np1;
     
-    Scalar_Concentration_face.equal_I_C2F(Scalar_Concentration_new);
+    Scalar_Concentration_face.Equal_I_C2F(Scalar_Concentration_new);
 }
 
 
