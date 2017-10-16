@@ -7,7 +7,7 @@
 #include "communicator.h"
 #include "grid.h"
 
-grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),Scalar_Concentration_int(s,com),Scalar_Concentration_new(s,com),Scalar_Concentration_np1(s,com),Scalar_Concentration_face(s,com),g(s,com),  RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),C(s,com),Rho(s,com),Rho_int(s,com),Rho_new(s,com),Rho_np1(s,com),RHS_Rho(s,com),Rho_face(s,com),T(s,com),dummy(s,com),dummy2(s,com),dummyS(s,com),divergence(s,com),RHS_Part_Temp(s,com),PS_(p,pc,s,com),part(p,pc,s),UC(s,comm)
+grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),Scalar_Concentration_int(s,com),Scalar_Concentration_new(s,com),Scalar_Concentration_np1(s,com),Scalar_Concentration_face(s,com),g(s,com),  RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),C(s,com),Rho(s,com),Rho_int(s,com),Rho_new(s,com),Rho_np1(s,com),RHS_Rho(s,com),Rho_face(s,com),T(s,com),dummy(s,com),dummy2(s,com),dummyS(s,com),divergence(s,com),RHS_Part_Temp(s,com),PS_(p,pc,s,com),part(p,pc,s),UC(s,com)
 {
   size_=s;
   param_=p;
@@ -263,7 +263,7 @@ void grid::Initialize()
   //Need to compute rho at faces once here, after this, Compute_RHS_Pois computes it
   Rho_face.Equal_I_C2F(Rho);
   //Need to compute Scalar_Concentration at faces once here, after this, Update_Scalar_Concentration computes it
-  Scalar_Concentration_face.equal_I_C2F(Scalar_Concentration);
+  Scalar_Concentration_face.Equal_I_C2F(Scalar_Concentration);
   //particle part
   part.x_int=part.x; part.y_int=part.y; part.z_int=part.z; part.u_int=part.u; part.v_int=part.v; part.w_int=part.w; part.T_int=part.T;
   part.x_np1=part.x; part.y_np1=part.y; part.z_np1=part.z; part.u_np1=part.u; part.v_np1=part.v; part.w_np1=part.w; part.T_np1=part.T;

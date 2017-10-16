@@ -24,7 +24,7 @@ int main (int argc,char *argv[] )
   grid GRID(&GSIZE,&PARAM,&PROC,&COMM);
   GRID.Initialize();
   // Time integration loop
-  do {
+  /*do {
       PARAM.update(GRID.T_cur);
       // RK4 loop
       for (GRID.RK4_count=0;GRID.RK4_count<4;GRID.RK4_count++)
@@ -37,13 +37,13 @@ int main (int argc,char *argv[] )
 	  GRID.Compute_RHS_Pois();
 	  GRID.Solve_Poisson();
 	  GRID.Update_RU_WP();
-	  GRID.Update_Scalar_Concentration();
+	  //GRID.Update_Scalar_Concentration();
 	  GRID.TimeAdvance_RK4();
 	}
       GRID.RU_np1.make_mean_zero();
       GRID.TimeAdvance();
       GRID.Statistics();
-  }  while ((GRID.T_cur<PARAM.T_final())&&(!GRID.Touch()));
+  }  while ((GRID.T_cur<PARAM.T_final())&&(!GRID.Touch()));*/
   
   MPI_Finalize();
 }

@@ -1,13 +1,14 @@
 OBJS=simulation.o proc.o params.o gridsize.o particle.o tensor0.o tensor1.o  poisson.o communicator.o grid.o
 CPP=mpicxx
 CFLAGS=-O3
-FFT_DIR=/Users/Yassi/Applications/tools/fft
-FFTW_DIR=/Users/Yassi/Applications/tools/fftw-2.1.5
-HYPRE_DIR=/Users/Yassi/Applications/tools/hypre-2.11.2/src/hypre
+FFT_DIR=/home/yshirian/tools/fft
+FFTW_DIR=/home/yshirian/tools/fftw-2.1.5
+HYPRE_DIR=/home/yshirian/tools/HYPRE
+
 CINCLUDES=-I $(HYPRE_DIR)/include -I $(FFTW_DIR)/include
-CDEFS=-DHAVE_CONFIG_H -DHYPRE_TIMING -DFFT_FFTW
+CDEFS = -DHAVE_CONFIG_H -DHYPRE_TIMING -DFFT_FFTW
 CFLAGS2=$(CFLAGS) $(CDEFS)
-LFLAGS=-L $(FFT_DIR)/ -L $(FFTW_DIR)/lib -L $(HYPRE_DIR)/lib
+LFLAGS=-L $(FFT_DIR)/Obj_certainty -L $(FFTW_DIR)/lib -L $(HYPRE_DIR)/lib
 LIBS=-lfft -lfftw -lfftw_mpi -lHYPRE -lm -lstdc++
 
 
