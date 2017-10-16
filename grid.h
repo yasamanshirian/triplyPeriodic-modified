@@ -96,7 +96,7 @@ class grid
   void Store();
   void TimeAdvance(); //advance one time step
   void Update_Rho();
-  void Update_Scalar_ConcEntration();
+  void Update_Scalar_Concentration();
   void C_Source();
   void Update_RU_WOP();
   void Update_P0();
