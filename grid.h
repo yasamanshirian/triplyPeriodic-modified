@@ -63,7 +63,6 @@ class grid
   tensor0 C; //particle concentration stored at cell center
   tensor0 Scalar_Concentration; //scalar concentration stored at cell center
   tensor0 g;//source function in scalar momentum equation
-  tensor0 Scalar_Concentration;
   tensor0 Scalar_Concentration_int;
   tensor0 Scalar_Concentration_new;
   tensor0 Scalar_Concentration_np1;
