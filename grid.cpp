@@ -7,7 +7,7 @@
 #include "communicator.h"
 #include "grid.h"
 
-grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),Scalar_Concentration_int(s,com),Scalar_Concentration_new(s,com),Scalar_Concentration_np1(s,com),Scalar_Concentration_face(s,com),g(s,com), RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),C(s,com),Rho(s,com),Rho_int(s,com),Rho_new(s,com),Rho_np1(s,com),RHS_Rho(s,com),Rho_face(s,com),T(s,com),dummy(s,com),dummy2(s,com),dummyS(s,com)divergence(s,com),RHS_Part_Temp(s,com),PS_(p,pc,s,com),part(p,pc,s),UC(s,com)
+grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),Scalar_Concentration_int(s,com),Scalar_Concentration_new(s,com),Scalar_Concentration_np1(s,com),Scalar_Concentration_face(s,com),Scalar_Concentration(s,com), g(s,com), RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),C(s,com),Rho(s,com),Rho_int(s,com),Rho_new(s,com),Rho_np1(s,com),RHS_Rho(s,com),Rho_face(s,com),T(s,com),dummy(s,com),dummy2(s,com),dummyS(s,com)divergence(s,com),RHS_Part_Temp(s,com),PS_(p,pc,s,com),part(p,pc,s),UC(s,com)
 {
   size_=s;
   param_=p;
