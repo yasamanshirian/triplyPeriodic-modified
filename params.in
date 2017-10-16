@@ -85,6 +85,5 @@
 #D_m (Molecular diffusivity)
 10
 
-
 #Hyperparameters in source function of scalar transfer equation(A_g, B_g, K_g: A_g*cos(K_gX) + B_g*sin(K_g*X))
 1 0 1
