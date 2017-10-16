@@ -77,7 +77,7 @@ class grid
   tensor0 T; //Gas temperature stored at cell cneter
   tensor1 dummy; //dummt array for computations
   tensor1 dummy2; //dummt array for computations
-  tensor1 dummyS; //dummt array for computations on tensor0
+  tensor0 dummyS; //dummt array for computations on tensor0
   tensor0 divergence; //to store divergence of momentum/velocity
   tensor0 RHS_Part_Temp; //Interpolated RHS of particle energy equation (due to the algorithm it has to be saved)
   double P0; // mean thermodynamic pressure
