@@ -63,6 +63,7 @@ class tensor1
   void Equal_Divide(tensor1&,tensor0&);
   void Equal_Divide(tensor0&,tensor1&);
   void Equal_Mult(tensor1&,double);
+  void Equal_Mult(tensor1&,tensor0&);
   void Equal_Mult(tensor1&,tensor1&);
   void Equal_Mult(double,tensor1&);
   void Equal_LinComb(double,tensor1&,double,tensor1&);

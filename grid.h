@@ -56,7 +56,7 @@ class grid
   tensor1 RU_WP; //momentum with pressure gradient effect (should match the divergence condition)
   tensor1 RHS_RU;
   tensor1 U; //u stored at cell center
-  tensor1 UC; //concentration *u stored at cell faces
+  //tensor1 UC; //concentration *u stored at cell faces
   tensor0 P; //pressure stored at cell center
   tensor0 dP; //pressure delta form (used in Poisson equation) stored at cell center
   tensor0 RHS_Pois; //one part of RHS of Poisson equation
@@ -77,7 +77,7 @@ class grid
   tensor0 T; //Gas temperature stored at cell cneter
   tensor1 dummy; //dummt array for computations
   tensor1 dummy2; //dummt array for computations
-  tensor0 dummyS; //dummt array for computations on tensor0
+  //tensor0 dummyS; //dummt array for computations on tensor0
   tensor0 divergence; //to store divergence of momentum/velocity
   tensor0 RHS_Part_Temp; //Interpolated RHS of particle energy equation (due to the algorithm it has to be saved)
   double P0; // mean thermodynamic pressure

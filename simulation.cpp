@@ -32,19 +32,20 @@ int main (int argc,char *argv[] )
 	  GRID.Update_Rho();
 	  GRID.Update_P0();
 	  GRID.Update_Particle();
-	  GRID.Update_RU_WOP(); 
+	  GRID.Update_RU_WOP();
+      GRID.Update_Scalar_Concentration();
 	  GRID.Compute_Div_U_new();
 	  GRID.Compute_RHS_Pois();
 	  GRID.Solve_Poisson();
 	  GRID.Update_RU_WP();
-	  GRID.Update_Scalar_Concentration();
 	  GRID.TimeAdvance_RK4();
 	}
-      GRID.RU_np1.make_mean_zero();
+      //GRID.RU_np1.make_mean_zero();
       GRID.TimeAdvance();
       GRID.Statistics();
-  }  while ((GRID.T_cur<PARAM.T_final())&&(!GRID.Touch()));
-  
+  }while ((GRID.T_cur<PARAM.T_final())&&(!GRID.Touch()));
+  //std::cout<< "before finalizing mpi"<<std::endl;
   MPI_Finalize();
+  //std::cout<< "after finalizing mpi"<<std::endl;
 }
   

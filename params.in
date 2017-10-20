@@ -23,7 +23,7 @@
 10 10
 
 #data_saving_directory  #statistics_saving_directory
-/fastscratch/ysirian/data/data_N24_WOD/ /fastscratch/yshirian/data/stat_N24_WOD/
+/fastscratch/yshirian/data/data_N24_WOD/ /fastscratch/yshirian/data/stat_N24_WOD/
 
 #Initial condition (0: from U.bin,V.bin,W.bin  1:from Restart.bin  2:Everything Uniform 3:TaylorGreenX 4:TaylorGreenY 5:TaylorGreenZ)
 0
@@ -50,13 +50,13 @@
 1.2
 
 #U0 (convective velocity in x direction)
-0
+1
 
 #T0
 300
 
 #Mu0 #k
-1.9e-5 .0275
+0 .0275
 
 #gx1 #gy1 #gz1 #gx2 #gy2 #gz2
 0 0 0 0 0 0
@@ -83,7 +83,7 @@
 0 4687500
 
 #D_m (Molecular diffusivity)
-10
+0
 
 #Hyperparameters in source function of scalar transfer equation(A_g, B_g, K_g)
 1 0 1

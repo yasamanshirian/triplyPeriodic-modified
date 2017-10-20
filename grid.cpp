@@ -7,7 +7,7 @@
 #include "communicator.h"
 #include "grid.h"
 
-grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),Scalar_Concentration_int(s,com),Scalar_Concentration_new(s,com),Scalar_Concentration_np1(s,com),Scalar_Concentration_face(s,com),Scalar_Concentration(s,com), g(s,com), RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),C(s,com),Rho(s,com),Rho_int(s,com),Rho_new(s,com),Rho_np1(s,com),RHS_Rho(s,com),Rho_face(s,com),T(s,com),dummy(s,com),dummy2(s,com),dummyS(s,com),divergence(s,com),RHS_Part_Temp(s,com),PS_(p,pc,s,com),part(p,pc,s),UC(s,com)
+grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),Scalar_Concentration_int(s,com),Scalar_Concentration_new(s,com),Scalar_Concentration_np1(s,com),Scalar_Concentration_face(s,com),Scalar_Concentration(s,com),RHS_Scalar_Concentration(s,com), g(s,com), RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),C(s,com),Rho(s,com),Rho_int(s,com),Rho_new(s,com),Rho_np1(s,com),RHS_Rho(s,com),Rho_face(s,com),T(s,com),dummy(s,com),dummy2(s,com),divergence(s,com),RHS_Part_Temp(s,com),PS_(p,pc,s,com),part(p,pc,s)
 {
   size_=s;
   param_=p;
@@ -229,6 +229,9 @@ void grid::Initialize()
       com_->read(RU.x,"U.bin");
       com_->read(RU.y,"V.bin");
       com_->read(RU.z,"W.bin");
+      std::cout <<"U:" << RU.x.mean()<< std::endl;
+      std::cout <<"V:" << RU.y.mean()<< std::endl;
+      std::cout <<"W:" << RU.z.mean()<< std::endl;
       RU*=param_->Rho0();
       Rho=param_->Rho0();
       P=0;
@@ -246,8 +249,10 @@ void grid::Initialize()
     }
     
     if (param_->Initial_C()==0)
-    {
+    {	
+    	//std::cout<<"befor reading file"<<std::endl;
         com_->read(Scalar_Concentration,"Scalar_Concentration.bin");
+        //std::cout<<"after reading file"<<std::endl;
 
     }
     
@@ -263,7 +268,7 @@ void grid::Initialize()
   //Need to compute rho at faces once here, after this, Compute_RHS_Pois computes it
   Rho_face.Equal_I_C2F(Rho);
   //Need to compute Scalar_Concentration at faces once here, after this, Update_Scalar_Concentration computes it
- Scalar_Concentration_face.Equal_I_C2F(Scalar_Concentration);
+  Scalar_Concentration_face.Equal_I_C2F(Scalar_Concentration);
   //particle part
   part.x_int=part.x; part.y_int=part.y; part.z_int=part.z; part.u_int=part.u; part.v_int=part.v; part.w_int=part.w; part.T_int=part.T;
   part.x_np1=part.x; part.y_np1=part.y; part.z_np1=part.z; part.u_np1=part.u; part.v_np1=part.v; part.w_np1=part.w; part.T_np1=part.T;
@@ -298,18 +303,23 @@ void grid::Store()
       com_->write(dummy,(char*)(filename.c_str()));
     }
   // MORE FREQUENT DATA STORING
+  //std::cout<<"my number of steps" << num_timestep<<std::endl;
   if ((num_timestep%param_->data_freq_fast()==0)||(Is_touch_))
-    {
+    { 
+      //std::cout<<"before writing RU in file" <<std::endl;
       std::ostringstream filename_out_Data;
       filename_out_Data<<param_->data_dir()<<"RU"<<"_"<<num_timestep<<".bin";
       std::string filename=filename_out_Data.str();
       com_->write(RU,(char*)(filename.c_str()));
-        
+      //std::cout<<"after writing RU in file" <<std::endl;
+
+      //std::cout<<"before writing C in file" <<std::endl; 
       filename_out_Data.str("");
       filename_out_Data.clear();
       filename_out_Data<<param_->data_dir()<<"C"<<"_"<<num_timestep<<".bin";
       filename=filename_out_Data.str();
       com_->write(Scalar_Concentration,(char*)(filename.c_str()));
+      //std::cout<<"after writing C in file" <<std::endl;
       if (pc_->IsRoot())
 	{
 	  filename_out_Data.str("");
@@ -385,14 +395,23 @@ void grid::C_Source()
 
 void grid::Update_Scalar_Concentration()
 {
-    UC.Equal_Mult(U,Scalar_Concentration_face);//computing u_int at faces, note: we have already computed Scalar_Concentration_face in previous RK4 substep
-    RHS_Scalar_Concentration.Equal_Div_F2C(UC); //In fact, here we compute minus RHS_Scalar_Concentration, i.e. div(RU)
-    dummyS.Equal_Del2(Scalar_Concentration_int);//div(grad(C))
+    //std::cout<<"before UC" <<std::endl;
+    dummy.Equal_Mult(U,Scalar_Concentration_face);//computing u_int at faces, note: we have already computed Scalar_Concentration_face in previous RK4 substep
+    //std::cout<<"after UC" <<std::endl;
+    dummy2.x.Equal_Div_F2C(dummy);
+    //RHS_Scalar_Concentration.Equal_Div_F2C(UC); //In fact, here we compute minus RHS_Scalar_Concentration, i.e. div(CU)
+    //std::cout<<"before Del2" <<std::endl;
+    dummy2.y.Equal_Del2(Scalar_Concentration_int);//div(grad(C))
+    //std::cout<<"before source" <<std::endl;
     grid::C_Source();
-    RHS_Scalar_Concentration+=g;
-    dummyS.Equal_Mult(param_->D_M(),dummyS);
-    RHS_Scalar_Concentration+=dummyS;
-    Scalar_Concentration_np1.PlusEqual_Mult(-(param_->dt()*RK4_postCoeff[RK4_count]),RHS_Scalar_Concentration); //Update Scalar_Concentration_np1
+    //std::cout<<"before add source" <<std::endl;
+    RHS_Scalar_Concentration.Equal_LinComb(param_->D_M(),dummy2.y,-1,dummy2.x);
+    RHS_Scalar_Concentration-=g;
+    //std::cout<<"before diffusion source" <<std::endl;
+    //dummyS.Equal_Mult(param_->D_M(),dummyS);
+    //RHS_Scalar_Concentration-=dummyS;
+    Scalar_Concentration_np1.PlusEqual_Mult((param_->dt()*RK4_postCoeff[RK4_count]),RHS_Scalar_Concentration); //Update Scalar_Concentration_np1
+    //std::cout<<"after plusEqual_Mult" <<std::endl;
     if (RK4_count!=3) Scalar_Concentration_new.Equal_LinComb(1,Scalar_Concentration,-param_->dt()*RK4_preCoeff[RK4_count],RHS_Scalar_Concentration); //update Scalar_Concentration_new
     else Scalar_Concentration_new=Scalar_Concentration_np1;
     
