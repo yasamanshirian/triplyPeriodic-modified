@@ -23,7 +23,7 @@
 10 10
 
 #data_saving_directory  #statistics_saving_directory
-/fastscratch/yshirian/data/data_N24_WOD_U0/ /fastscratch/yshirian/data/stat_N24_WOD_U0/
+/fastscratch/yshirian/data/data_N24_WOD/ /fastscratch/yshirian/data/stat_N24_WOD/
 
 #Initial condition (0: from U.bin,V.bin,W.bin  1:from Restart.bin  2:Everything Uniform 3:TaylorGreenX 4:TaylorGreenY 5:TaylorGreenZ)
 0
