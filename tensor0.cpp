@@ -385,6 +385,14 @@ void tensor0::make_mean_zero()
   double Mean=mean();
   (*this)-=Mean;
 }
+//my addition
+void tensor0::make_mean_U0(double& a)
+{
+    double Mean=mean();
+    (*this)-=Mean;
+    (*this)+=a;
+}
+
 
 double tensor0::max()
 {

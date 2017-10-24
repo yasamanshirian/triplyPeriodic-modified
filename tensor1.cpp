@@ -316,6 +316,14 @@ void tensor1::make_mean_zero()
   y.make_mean_zero();
   z.make_mean_zero();
 }
+
+void tensor1::make_mean_U0(double& a)
+{
+    x.make_mean_U0(a);
+    y.make_mean_zero();
+    z.make_mean_zero();
+}
+
 double tensor1::max()
 {
   double maxX=x.max();

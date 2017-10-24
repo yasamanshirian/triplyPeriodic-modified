@@ -18,6 +18,10 @@ int main (int argc,char *argv[] )
   MPI_Init(&argc, &argv);
   // Define required objects
   params PARAM(argv[1]);
+  double U0_=PARAM.U0();
+  double Rho0_=PARAM.Rho0();
+  double RhoU_ = Rho0_*U0_;
+  //tensor0 Rho_,RhoU_;
   proc PROC;
   gridsize GSIZE(&PARAM,&PROC);
   communicator COMM(&GSIZE,&PARAM,&PROC);
@@ -32,14 +36,18 @@ int main (int argc,char *argv[] )
 	  GRID.Update_Rho();
 	  GRID.Update_P0();
 	  GRID.Update_Particle();
-	  GRID.Update_RU_WOP();
       GRID.Update_Scalar_Concentration();
+	  GRID.Update_RU_WOP();
 	  GRID.Compute_Div_U_new();
 	  GRID.Compute_RHS_Pois();
 	  GRID.Solve_Poisson();
 	  GRID.Update_RU_WP();
+      
 	  GRID.TimeAdvance_RK4();
 	}
+      //Rho_ = GRID.Rho_np1;
+      
+      GRID.RU_np1.make_mean_U0(RhoU_);
       //GRID.RU_np1.make_mean_zero();
       GRID.TimeAdvance();
       GRID.Statistics();
