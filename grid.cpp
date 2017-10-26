@@ -400,6 +400,7 @@ void grid::C_Source()
                 //Z=size_->dz()/2.+k*size_->dz();
                 g(I,J,K)=param_->A_g()*cos(param_->K_g()*X) + param_->B_g()*sin(param_->K_g()*X);//user can manually change this function to the desired one
             }
+    g.Update_Ghosts();
     //g.Equal_Ix_F2C(g);
     
     

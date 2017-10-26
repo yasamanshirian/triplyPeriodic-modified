@@ -47,8 +47,8 @@ int main (int argc,char *argv[] )
 	}
       //Rho_ = GRID.Rho_np1;
       
-      //GRID.RU_np1.make_mean_U0(RhoU_);
-      GRID.RU_np1.make_mean_zero();
+      GRID.RU_np1.make_mean_U0(RhoU_);
+      //GRID.RU_np1.make_mean_zero();
       GRID.TimeAdvance();
       GRID.Statistics();
   }while ((GRID.T_cur<PARAM.T_final())&&(!GRID.Touch()));
