@@ -31,7 +31,9 @@ class params
   double Cp_,Cv_,R_; //specific heat coeffs.
   double Mu0_,k_; //Dynamic viscosity and conductivity
   double Rho0_; //Initial density 
-  double U0_; //Convective velocity
+  double U0_; //Convective velocity in x direction
+  double V0_; //Convective velocity in y direction
+  double W0_; //Convective velocity in z direction
   double T0_; //Initial temperature
   double np0_; //particle number density
   double Dp_; //particle diameter
@@ -75,6 +77,8 @@ class params
   double Mu0() {return Mu0_;} 
   double T0() {return T0_;}
   double U0() {return U0_;}
+  double V0() {return V0_;}
+  double W0() {return W0_;}
   double Rho0() {return Rho0_;}
 
   double A() {return A_;}

@@ -319,9 +319,9 @@ void tensor1::make_mean_zero()
 
 void tensor1::make_mean_U0(double& a)
 {
-    x.make_mean_U0(a);
-    y.make_mean_zero();
-    z.make_mean_zero();
+    x.make_mean_U0(a[0]);
+    y.make_mean_zero(a[1]);
+    z.make_mean_zero(a[2]);
 }
 
 double tensor1::max()

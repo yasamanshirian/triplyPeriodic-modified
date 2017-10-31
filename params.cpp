@@ -36,7 +36,7 @@ params::params(char *address)
   param_trimmed_in>>TWC_>>ParticleGravity_;
   param_trimmed_in>>A1_>>A2_;
   param_trimmed_in>>Rho0_;
-  param_trimmed_in>>U0_;
+  param_trimmed_in>>U0_>>V0_>>W0_;
   param_trimmed_in>>T0_;
   param_trimmed_in>>Mu0_>>k_;
   param_trimmed_in>>gx1_>>gy1_>>gz1_>>gx2_>>gy2_>>gz2_;

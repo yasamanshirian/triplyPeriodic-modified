@@ -18,9 +18,13 @@ int main (int argc,char *argv[] )
   MPI_Init(&argc, &argv);
   // Define required objects
   params PARAM(argv[1]);
-  double U0_=PARAM.U0();
+  double U_mean[3],RhoU_[3];
+  U_mean[0]=PARAM.U0();
+  U_mean[1]=PARAM.V0();
+  U_mean[2]=PARAM.W0();
   double Rho0_=PARAM.Rho0();
-  double RhoU_ = Rho0_*U0_;
+  //double RhoU_ = Rho0_*U0_;
+  RhoU_ = Rho0_*U_mean;
   //tensor0 Rho_,RhoU_;
   proc PROC;
   gridsize GSIZE(&PARAM,&PROC);
