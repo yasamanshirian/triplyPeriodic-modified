@@ -19,12 +19,15 @@ int main (int argc,char *argv[] )
   // Define required objects
   params PARAM(argv[1]);
   double U_mean[3],RhoU_[3];
+  double Rho0_=PARAM.Rho0();
   U_mean[0]=PARAM.U0();
   U_mean[1]=PARAM.V0();
   U_mean[2]=PARAM.W0();
-  double Rho0_=PARAM.Rho0();
+  RhoU_[0]=U_mean[0]*Rho0_;
+  RhoU_[1]=U_mean[0]*Rho0_;
+  RhoU_[2]=U_mean[0]*Rho0_;
+  
   //double RhoU_ = Rho0_*U0_;
-  RhoU_ = Rho0_*U_mean;
   //tensor0 Rho_,RhoU_;
   proc PROC;
   gridsize GSIZE(&PARAM,&PROC);
