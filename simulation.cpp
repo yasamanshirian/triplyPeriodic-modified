@@ -18,11 +18,17 @@ int main (int argc,char *argv[] )
   MPI_Init(&argc, &argv);
   // Define required objects
   params PARAM(argv[1]);
+  //std::cout << "before defining u_mean" << std::endl;
   double U_mean[3],RhoU_[3];
   double Rho0_=PARAM.Rho0();
+  //std::cout << "PARAM.U0()" << PARAM.U0()<<std::endl;
+  //std::cout << "U_mean[0]" << U_mean[0]<<std::endl;
+  //std::cout << "before assigning u_mean" << std::endl;
   U_mean[0]=PARAM.U0();
+  //std::cout << "U_mean[0]" << U_mean[0]<<std::endl;
   U_mean[1]=PARAM.V0();
   U_mean[2]=PARAM.W0();
+  //std::cout << "before assigning Ru_mean" << std::endl;
   RhoU_[0]=U_mean[0]*Rho0_;
   RhoU_[1]=U_mean[0]*Rho0_;
   RhoU_[2]=U_mean[0]*Rho0_;
@@ -34,6 +40,7 @@ int main (int argc,char *argv[] )
   communicator COMM(&GSIZE,&PARAM,&PROC);
   grid GRID(&GSIZE,&PARAM,&PROC,&COMM);
   GRID.Initialize();
+  //std::cout << "before loop" << std::endl;
   // Time integration loop
   do {
       PARAM.update(GRID.T_cur);

@@ -46,7 +46,7 @@ class tensor1
   ~tensor1(){}
   //statistics
   void make_mean_zero(); //make mean value of T.x, T.y, and T.z zero
-  void make_mean_U0(double&); //make mean value of T.x = U0, T.y, and T.z zero
+  void make_mean_U0(double*); //make mean value of T.x = U0, T.y, and T.z zero
   double sum(); //sum of all elements in x, y, and z
   double sum_squares(); //sum of all elements squared in x, y, and z
   double rms(); //sqrt(mean_squares)
@@ -66,7 +66,7 @@ class tensor1
   void Equal_Mult(tensor1&,double);
   void Equal_Mult(tensor1&,tensor0&);
   void Equal_Mult(tensor1&,tensor1&);
-    void Equal_Mult(tensor0&,tensor1&);
+  void Equal_Mult(tensor0&,tensor1&);
   void Equal_Mult(double,tensor1&);
   void Equal_LinComb(double,tensor1&,double,tensor1&);
   void Equal_LinComb(tensor1&,tensor1&,tensor1&,tensor1&);
