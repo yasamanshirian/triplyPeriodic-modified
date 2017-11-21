@@ -28,7 +28,7 @@ int main (int argc,char *argv[] )
   //std::cout << "U_mean[0]" << U_mean[0]<<std::endl;
   U_mean[1]=PARAM.V0();
   U_mean[2]=PARAM.W0();
-  std::cout << "U_mean[1]" << U_mean[1]<<std::endl;
+  //std::cout << "U_mean[1]" << U_mean[1]<<std::endl;
 //std::cout << "before assigning Ru_mean" << std::endl;
 
   RhoU_[0]=U_mean[0]*Rho0_;
