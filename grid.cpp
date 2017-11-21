@@ -210,6 +210,8 @@ void grid::Initialize()
       //These files are initial condition for timestep=num_timestep
       com_->read(RU,"Restart_RU.bin");
       if (pc_->IsRoot()) std::cout<<"*+=*+=*+=*+=RU LOADED*+=*+=*+=*+="<<std::endl;
+      com_->read(Scalar_Concentartion,"Restart_Scalar_Concentration.bin");
+      if (pc_->IsRoot()) std::cout<<"*+=*+=*+=*+=Scalar Concentartion LOADED*+=*+=*+=*+="<<std::endl;
       com_->read(Rho,"Restart_Rho.bin");
       if (pc_->IsRoot()) std::cout<<"*+=*+=*+=*+=Rho LOADED*+=*+=*+=*+="<<std::endl;
       com_->read(P,"Restart_P.bin");  
