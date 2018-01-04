@@ -126,8 +126,8 @@ void grid::Initialize()
 	      X=size_->dx()/2.+i*size_->dx();
 	      Y=size_->dy()/2.+j*size_->dy();
 	      Z=size_->dz()/2.+k*size_->dz();
-	      RU.x(I,J,K) = sin(Two_PI_Over_Lx * (X-size_->dx()/2.)) * cos(Two_PI_Over_Ly * Y);
-	      RU.y(I,J,K) = -cos(Two_PI_Over_Lx * X) * sin(Two_PI_Over_Ly * (Y-size_->dy()/2.));
+	      RU.x(I,J,K) = Two_PI_Over_Ly*sin(Two_PI_Over_Lx * (X-size_->dx()/2.)) * cos(Two_PI_Over_Ly * Y);
+	      RU.y(I,J,K) = -Two_PI_Over_Lx*cos(Two_PI_Over_Lx * X) * sin(Two_PI_Over_Ly * (Y-size_->dy()/2.));
 	      RU.z(I,J,K)=0;
 	    }
       RU.Update_Ghosts();
@@ -153,9 +153,9 @@ void grid::Initialize()
 	      X=size_->dx()/2.+i*size_->dx();
 	      Y=size_->dy()/2.+j*size_->dy();
 	      Z=size_->dz()/2.+k*size_->dz();
-	      RU.x(I,J,K) =- cos(Two_PI_Over_Lz * Z) * sin(Two_PI_Over_Lx*(X-size_->dx()/2.));
+	      RU.x(I,J,K) =- Two_PI_Over_Lz*cos(Two_PI_Over_Lz * Z) * sin(Two_PI_Over_Lx*(X-size_->dx()/2.));
 	      RU.y(I,J,K) = 0;
-	      RU.z(I,J,K) = sin(Two_PI_Over_Lz*(Z-size_->dz()/2.)) * cos(Two_PI_Over_Lx*X);
+	      RU.z(I,J,K) = Two_PI_Over_Lx*sin(Two_PI_Over_Lz*(Z-size_->dz()/2.)) * cos(Two_PI_Over_Lx*X);
 	    }
       RU.Update_Ghosts();
       Rho=param_->Rho0();
@@ -181,8 +181,8 @@ void grid::Initialize()
 	      Y=size_->dy()/2.+j*size_->dy();
 	      Z=size_->dz()/2.+k*size_->dz();
 	      RU.x(I,J,K) = 0;
-	      RU.y(I,J,K) = sin(Two_PI_Over_Ly*(Y-size_->dy()/2.))*cos(Two_PI_Over_Lz*Z);
-	      RU.z(I,J,K) = -cos(Two_PI_Over_Ly*Y)*sin(Two_PI_Over_Lz*(Z-size_->dz()/2.));
+	      RU.y(I,J,K) = Two_PI_Over_Lz*sin(Two_PI_Over_Ly*(Y-size_->dy()/2.))*cos(Two_PI_Over_Lz*Z);
+	      RU.z(I,J,K) = -Two_PI_Over_Ly*cos(Two_PI_Over_Ly*Y)*sin(Two_PI_Over_Lz*(Z-size_->dz()/2.));
 	    }
       RU.Update_Ghosts();
       Rho=param_->Rho0();
@@ -240,6 +240,66 @@ void grid::Initialize()
       T_cur=0;
       num_timestep=0;
     }
+
+    if (param_->Initial_C()==5)
+    {
+      double X,Y,Z;
+      int I,J,K;
+      for (int k=size_->kl();k<=size_->kh();k++)
+	for (int j=size_->jl();j<=size_->jh();j++)
+	  for (int i=size_->il();i<=size_->ih();i++)
+	    {
+	      I=i-size_->il()+size_->bs();
+	      J=j-size_->jl()+size_->bs();
+	      K=k-size_->kl()+size_->bs();
+	      X=size_->dx()/2.+i*size_->dx();
+	      Y=size_->dy()/2.+j*size_->dy();
+	      Z=size_->dz()/2.+k*size_->dz();
+	      Scalar_Concentration(I,J,K) = sin(Two_PI_Over_Lx*X) * sin(Two_PI_Over_Ly*Y);
+	      
+	    }
+      Scalar_Concentration.Update_Ghosts();
+    }
+
+  if (param_->Initial_C()==4)
+    {
+      double X,Y,Z;
+      int I,J,K;
+      for (int k=size_->kl();k<=size_->kh();k++)
+	for (int j=size_->jl();j<=size_->jh();j++)
+	  for (int i=size_->il();i<=size_->ih();i++)
+	    {
+	      I=i-size_->il()+size_->bs();
+	      J=j-size_->jl()+size_->bs();
+	      K=k-size_->kl()+size_->bs();
+	      X=size_->dx()/2.+i*size_->dx();
+	      Y=size_->dy()/2.+j*size_->dy();
+	      Z=size_->dz()/2.+k*size_->dz();
+	      Scalar_Concentration(I,J,K) = sin(Two_PI_Over_Lz * Z) * sin(Two_PI_Over_Lx * X);
+	    }
+      Scalar_Concentration.Update_Ghosts();
+    }
+  
+  if (param_->Initial_C()==3)
+    {
+      double X,Y,Z;
+      int I,J,K;
+      for (int k=size_->kl();k<=size_->kh();k++)
+	for (int j=size_->jl();j<=size_->jh();j++)
+	  for (int i=size_->il();i<=size_->ih();i++)
+	    {
+	      I=i-size_->il()+size_->bs();
+	      J=j-size_->jl()+size_->bs();
+	      K=k-size_->kl()+size_->bs();
+	      X=size_->dx()/2.+i*size_->dx();
+	      Y=size_->dy()/2.+j*size_->dy();
+	      Z=size_->dz()/2.+k*size_->dz();
+	      Scalar_Concentration(I,J,K) = sin(Two_PI_Over_Ly * Y) * sin(Two_PI_Over_Lz * Z);
+	    }
+      Scalar_Concentration.Update_Ghosts();
+    }
+
+
     
     if (param_->Initial_C()==1)
     {
@@ -408,6 +468,7 @@ void grid::C_Source()
 
 void grid::Update_Scalar_Concentration()
 {
+    U.Equal_Divide(RU_new,Rho_face); //Compute U_new at cell faces and store it in U
     //std::cout<<"before UC" <<std::endl;
     dummy.Equal_Mult(U,Scalar_Concentration_face);//computing u_int at faces, note: we have already computed Scalar_Concentration_face in previous RK4 substep
     //std::cout<<"after UC" <<std::endl;
