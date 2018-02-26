@@ -30,6 +30,7 @@ class grid
   std::ofstream stat_TKE_U;
   std::ofstream stat_TKE_V;
   std::ofstream stat_TKE_W;
+  std::ofstream stat_Scalar_Concentration_rms;
   std::ofstream stat_P0;
   std::ofstream stat_CMax;
   std::ofstream stat_CMin;

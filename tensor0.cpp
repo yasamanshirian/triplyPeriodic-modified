@@ -3,7 +3,7 @@
 #include "communicator.h"
 #include <mpi.h>
 #include <math.h>
-
+#include <iostream>
 double tensor0::ABS(double a)
 {
   return (a>=0)?a:-a;
@@ -391,6 +391,62 @@ void tensor0::make_mean_U0(double a)
     double Mean=mean();
     (*this)-=Mean;
     (*this)+=a;
+}
+
+//to kill strong modes for HIT in duct in x-direction
+
+void tensor0::kill_strong_modes(double rho0)
+{
+    const double TWO_PI(2*3.141592653589793);
+    double k_prime{TWO_PI/Lx()};
+    double LocalSum_ak,GlobalSum_ak,LocalSum_bk,GlobalSum_bk;
+    int iL{p_->il()},n{1},I{0};
+    double ak_prime{0},bk_prime{0},X{0};
+    while (k_prime < 1)
+    //while (n < 3)
+    {
+        LocalSum_ak = 0;
+        GlobalSum_ak = 0;
+        LocalSum_bk = 0;
+        GlobalSum_bk = 0;
+        for (int i(bs()); i<Nx()-bs(); i++)
+            for (int j(bs()); j<Ny()-bs(); j++)
+                for (int k(bs()); k<Nz()-bs(); k++){
+                    I= iL + i - bs();
+                    //std::cout << "I : " << I <<std::endl;
+                    X= dx()/2.0 + I*dx();
+                    //std::cout << "X : " << X <<std::endl;
+                    LocalSum_ak += (*this)(i,j,k)*cos(k_prime*X);
+                    //std::cout << "LocalSum_ak : " << LocalSum_ak <<std::endl;
+                    LocalSum_bk += (*this)(i,j,k)*sin(k_prime*X);
+                    //std::cout << "LocalSum_bk : " << LocalSum_bk <<std::endl;
+                }
+    
+        MPI_Reduce(&LocalSum_ak,&GlobalSum_ak,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+        MPI_Bcast(&GlobalSum_ak,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+        //std::cout << "GlobalSum_ak : " << GlobalSum_ak <<std::endl;
+        MPI_Reduce(&LocalSum_bk,&GlobalSum_bk,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+        MPI_Bcast(&GlobalSum_bk,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+        //std::cout << "GlobalSum_bk : " << GlobalSum_bk <<std::endl;
+        ak_prime = 2.0/(p_->size_tot())*(GlobalSum_ak);
+        bk_prime = 2.0/(p_->size_tot())*(GlobalSum_bk);
+        
+        for (int i(bs()); i<Nx()-bs(); i++)
+            for (int j(bs()); j<Ny()-bs(); j++)
+                for (int k(bs()); k<Nz()-bs(); k++){
+                    I= iL + i- bs();
+                    X=dx()/2.+I*dx();
+                    (*this)(i,j,k) -= ak_prime*cos(k_prime*X);
+                    (*this)(i,j,k) -= bk_prime*sin(k_prime*X);
+                }
+	Update_Ghosts();
+        ++(n);
+        //std::cout << "n : " << n <<std::endl;
+        k_prime = n* TWO_PI/Lx();
+        //std::cout << "k_prime : " << k_prime <<std::endl;
+        
+    }
+    
 }
 
 

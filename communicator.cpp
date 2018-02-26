@@ -102,6 +102,7 @@ void communicator::write(tensor1 &T,char *adrs)
   MPI_File_set_view(Myfile,2*TNOD,MPI_DOUBLE,filetype,"native",MPI_INFO_NULL);
   MPI_File_write_all(Myfile,T.z.pointer(),1,memtype,&status);
   MPI_File_close(&Myfile);
+  //std::cout << "end of writing"<<std::endl;
 }
 
 void communicator::SEND_RECV_BLOCKING(tensor0 &T)
