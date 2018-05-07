@@ -36,7 +36,7 @@ grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s
 	  open_stat_file("TKE_U",stat_TKE_U);
 	  open_stat_file("TKE_V",stat_TKE_V);
 	  open_stat_file("TKE_W",stat_TKE_W);
-          open_stat_file("Scalar_Concentration_rms",stat_Scalar_Concentration_rms);
+          open_stat_file("Scalar_Concentration_mean",stat_Scalar_Concentration_mean);
 	  open_stat_file("P0",stat_P0);
 	  open_stat_file("C_Max",stat_CMax);
 	  open_stat_file("C_Min",stat_CMin);
@@ -63,7 +63,7 @@ grid::~grid()
 	  stat_TKE_U.close();
 	  stat_TKE_V.close();
 	  stat_TKE_W.close();
-          stat_Scalar_Concentration_rms.close();
+          stat_Scalar_Concentration_mean.close();
 	  stat_P0.close();
 	  stat_CMax.close();
 	  stat_CMin.close();
@@ -482,7 +482,9 @@ void grid::Update_Scalar_Concentration()
     //std::cout<<"before add source" <<std::endl;
     RHS_Scalar_Concentration.Equal_LinComb(param_->D_M(),dummy2.y,-1,dummy2.x);
     RHS_Scalar_Concentration+=g;
-    //RHS_Scalar_Concentration=g;
+    U.Equal_I_F2C(U);
+    
+    RHS_Scalar_Concentration.PlusEqual_Mult(-1*alpha,U);
     //std::cout<<"before diffusion source" <<std::endl;
     Scalar_Concentration_np1.PlusEqual_Mult((param_->dt()*RK4_postCoeff[RK4_count]),RHS_Scalar_Concentration); //Update Scalar_Concentration_np1
     //std::cout<<"after plusEqual_Mult" <<std::endl;
@@ -627,7 +629,7 @@ void grid::Statistics()
   double C_min=C.min();
   double C_mean=C.mean();
   double TKE2=U.mean_squares();
-  double Scalar_Concentration_rms = Scalar_Concentration.rms();
+  double Scalar_Concentration_mean = Scalar_Concentration.mean_squares();
   double Particle_CFL_Max=0;
   double TKE,TKE_U,TKE_V,TKE_W;
   U.Equal_Divide(RU_np1,Rho_face);
@@ -657,7 +659,7 @@ void grid::Statistics()
   stat_TKE_U<<T_cur<<" "<<TKE_U<<std::endl;
   stat_TKE_V<<T_cur<<" "<<TKE_V<<std::endl;
   stat_TKE_W<<T_cur<<" "<<TKE_W<<std::endl;
-  stat_Scalar_Concentration_rms<<T_cur<< "" <<Scalar_Concentration_rms<<std::endl;
+  stat_Scalar_Concentration_mean<<T_cur<<" "<<Scalar_Concentration_mean<<std::endl;
   stat_P0<<T_cur<<" "<<P0<<std::endl;
   stat_CMax<<T_cur<<" "<<C_max<<std::endl;
   stat_CMin<<T_cur<<" "<<C_min<<std::endl;
@@ -677,7 +679,7 @@ void grid::Statistics()
   std::cout<<"*** Particle Maximum CFL="<<Particle_CFL_Max<<"  ,  Gas Maximum CFL="<<Gas_CFL_Max<<"  ,  Gas Maximum diffusive CFL="<<Gas_Max_Diff_CFL<<std::endl;
   std::cout<<"*** P0="<<P0<<"   ,   Number of Poisson solve iterations="<<PS_.num_iteration()<<std::endl;
   std::cout<<"*** Twice TKE_U ="<<TKE_U<<"  ,  TKE_V ="<<TKE_V<<"  ,  TKE_W ="<<TKE_W<<"  , Twice TKE ="<<TKE<<"  , Twice TKE2="<<TKE2<<std::endl;
-  std::cout<<"*** Scalar_Concentration_rms ="<<Scalar_Concentration_rms<<std::endl;
+  std::cout<<"*** Scalar_Concentration_mean ="<<Scalar_Concentration_mean<<std::endl;
   std::cout<<"*** Particle u_max="<<Vp_max<<"  ,  Gas interpolated u_max="<<ug_max<<"  ,  Gas u_max="<<u_max<<std::endl;
   std::cout<<"Mean energy transferred from particle to gas="<<-mean_energy_transferred<<"  ,  Balance_Index="<<Load_Balance<<std::endl;
   

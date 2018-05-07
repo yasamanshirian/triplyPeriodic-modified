@@ -395,7 +395,7 @@ void tensor0::make_mean_U0(double a)
 
 //to kill strong modes for HIT in duct in x-direction
 
-void tensor0::kill_strong_modes(double rho0)
+void tensor0::kill_strong_modes()
 {
     const double TWO_PI(2*3.141592653589793);
     double k_prime{TWO_PI/Lx()};
@@ -413,9 +413,9 @@ void tensor0::kill_strong_modes(double rho0)
             for (int j(bs()); j<Ny()-bs(); j++)
                 for (int k(bs()); k<Nz()-bs(); k++){
                     I= iL + i - bs();
-                    //std::cout << "I : " << I <<std::endl;
+                    //std::cout <<"***i=" << I;
                     X= dx()/2.0 + I*dx();
-                    //std::cout << "X : " << X <<std::endl;
+                    //std::cout <<" ***x= " << X<<std::endl;;
                     LocalSum_ak += (*this)(i,j,k)*cos(k_prime*X);
                     //std::cout << "LocalSum_ak : " << LocalSum_ak <<std::endl;
                     LocalSum_bk += (*this)(i,j,k)*sin(k_prime*X);
@@ -436,8 +436,8 @@ void tensor0::kill_strong_modes(double rho0)
                 for (int k(bs()); k<Nz()-bs(); k++){
                     I= iL + i- bs();
                     X=dx()/2.+I*dx();
-                    (*this)(i,j,k) -= ak_prime*cos(k_prime*X);
-                    (*this)(i,j,k) -= bk_prime*sin(k_prime*X);
+                    (*this)(i,j,k) += -1.0*ak_prime*cos(k_prime*X);
+                    (*this)(i,j,k) += -1.0*bk_prime*sin(k_prime*X);
                 }
 	Update_Ghosts();
         ++(n);

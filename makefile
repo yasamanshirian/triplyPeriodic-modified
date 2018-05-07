@@ -1,9 +1,9 @@
 OBJS=simulation.o proc.o params.o gridsize.o particle.o tensor0.o tensor1.o  poisson.o communicator.o grid.o
-CPP=mpicxx
+CPP=mpiicc
 CFLAGS=-O3
-FFT_DIR=/home/yshirian/tools/fft
-FFTW_DIR=/home/yshirian/tools/fftw-2.1.5
-HYPRE_DIR=/home/yshirian/tools/HYPRE
+FFT_DIR=/home/mani/yshirian/tools/fft
+FFTW_DIR=/home/mani/yshirian/tools/fftw-2.1.5
+HYPRE_DIR=/home/mani/yshirian/tools/HYPRE
 
 CINCLUDES=-I $(HYPRE_DIR)/include -I $(FFTW_DIR)/include
 CDEFS = -DHAVE_CONFIG_H -DHYPRE_TIMING -DFFT_FFTW
