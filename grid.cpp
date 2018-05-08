@@ -482,9 +482,9 @@ void grid::Update_Scalar_Concentration()
     //std::cout<<"before add source" <<std::endl;
     RHS_Scalar_Concentration.Equal_LinComb(param_->D_M(),dummy2.y,-1,dummy2.x);
     RHS_Scalar_Concentration+=g;
-    U.Equal_I_F2C(U);
+    //U.Equal_I_F2C(U);
     
-    RHS_Scalar_Concentration.PlusEqual_Mult(-1*alpha,U);
+    //RHS_Scalar_Concentration.PlusEqual_Mult(-1*alpha,U);
     //std::cout<<"before diffusion source" <<std::endl;
     Scalar_Concentration_np1.PlusEqual_Mult((param_->dt()*RK4_postCoeff[RK4_count]),RHS_Scalar_Concentration); //Update Scalar_Concentration_np1
     //std::cout<<"after plusEqual_Mult" <<std::endl;
