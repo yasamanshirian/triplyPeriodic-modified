@@ -8,7 +8,7 @@ class tensor1;
 class communicator;
 extern "C" 
 {
-#include "/home/yshirian/tools/fft/fft_3d.h" //required for SANDIA parallel fft package (using FFTW)
+#include "/home/mani/yshirian/tools/fft/fft_3d.h" //required for SANDIA parallel fft package (using FFTW)
 /* required for Hypre package */
 #include <math.h>
 #include "_hypre_utilities.h"
