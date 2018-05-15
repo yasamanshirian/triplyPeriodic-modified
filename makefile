@@ -12,10 +12,11 @@ LFLAGS=-L $(FFT_DIR)/Obj_certainty -L $(FFTW_DIR)/lib -L $(HYPRE_DIR)/lib
 LIBS=-lfft -lfftw -lfftw_mpi -lHYPRE -lm -lstdc++
 
 
-default: box
+default: box_lowFreq
 
-box: $(OBJS)
-	$(CPP) $(CFLAGS2) $(CINCLUDES) -o box $(OBJS) $(LFLAGS) $(LIBS)
+box_lowFreq: $(OBJS)
+
+	$(CPP) $(CFLAGS2) $(CINCLUDES) -o box_lowFreq $(OBJS) $(LFLAGS) $(LIBS)
 
 simulation.o: simulation.cpp proc.h proc.cpp params.h params.cpp gridsize.h gridsize.cpp tensor0.h tensor0.cpp tensor1.h tensor1.cpp communicator.h communicator.cpp grid.h grid.cpp particle.h particle.cpp
 	$(CPP) $(CFLAGS2) $(CINCLUDES) -c simulation.cpp
@@ -48,4 +49,4 @@ proc.o: proc.h proc.cpp
 	$(CPP) $(CFLAGS) -c proc.cpp
 
 clean:
-	rm -rf *.o box
+	rm -rf *.o box_lowFreq
