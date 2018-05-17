@@ -7,7 +7,7 @@
 #include "communicator.h"
 #include "grid.h"
 #include "scalar_source.h"
-grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),Scalar_Concentration_int(s,com),Scalar_Concentration_new(s,com),Scalar_Concentration_np1(s,com),Scalar_Concentration_face(s,com),Scalar_Concentration(s,com),RHS_Scalar_Concentration(s,com), S1(s,com), RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),C(s,com),Rho(s,com),Rho_int(s,com),Rho_new(s,com),Rho_np1(s,com),RHS_Rho(s,com),Rho_face(s,com),T(s,com),dummy(s,com),dummy2(s,com),divergence(s,com),RHS_Part_Temp(s,com),PS_(p,pc,s,com),part(p,pc,s)
+grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),Passive_Scalar_int(s,com),Passive_Scalar_new(s,com),Passive_Scalar_np1(s,com),Passive_Scalar_face(s,com),Passive_Scalar(s,com),RHS_Passive_Scalar(s,com), S1(s,com), RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),C(s,com),Rho(s,com),Rho_int(s,com),Rho_new(s,com),Rho_np1(s,com),RHS_Rho(s,com),Rho_face(s,com),T(s,com),dummy(s,com),dummy2(s,com),divergence(s,com),RHS_Part_Temp(s,com),PS_(p,pc,s,com),part(p,pc,s)
 {
   size_=s;
   param_=p;
@@ -36,7 +36,7 @@ grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s
 	  open_stat_file("TKE_U",stat_TKE_U);
 	  open_stat_file("TKE_V",stat_TKE_V);
 	  open_stat_file("TKE_W",stat_TKE_W);
-          open_stat_file("Scalar_Concentration_mean",stat_Scalar_Concentration_mean);
+          open_stat_file("Passive_Scalar_mean",stat_Passive_Scalar_mean);
 	  open_stat_file("P0",stat_P0);
 	  open_stat_file("C_Max",stat_CMax);
 	  open_stat_file("C_Min",stat_CMin);
@@ -63,7 +63,7 @@ grid::~grid()
 	  stat_TKE_U.close();
 	  stat_TKE_V.close();
 	  stat_TKE_W.close();
-          stat_Scalar_Concentration_mean.close();
+          stat_Passive_Scalar_mean.close();
 	  stat_P0.close();
 	  stat_CMax.close();
 	  stat_CMin.close();
@@ -257,10 +257,10 @@ void grid::Initialize()
 	      X=size_->dx()/2.+i*size_->dx();
 	      Y=size_->dy()/2.+j*size_->dy();
 	      Z=size_->dz()/2.+k*size_->dz();
-	      Scalar_Concentration(I,J,K) = sin(Two_PI_Over_Lx*X) * sin(Two_PI_Over_Ly*Y);
+	      Passive_Scalar(I,J,K) = sin(Two_PI_Over_Lx*X) * sin(Two_PI_Over_Ly*Y);
 	      
 	    }
-      Scalar_Concentration.Update_Ghosts();
+      Passive_Scalar.Update_Ghosts();
     }
 
   if (param_->Initial_C()==4)
@@ -277,9 +277,9 @@ void grid::Initialize()
 	      X=size_->dx()/2.+i*size_->dx();
 	      Y=size_->dy()/2.+j*size_->dy();
 	      Z=size_->dz()/2.+k*size_->dz();
-	      Scalar_Concentration(I,J,K) = sin(Two_PI_Over_Lz * Z) * sin(Two_PI_Over_Lx * X);
+	      Passive_Scalar(I,J,K) = sin(Two_PI_Over_Lz * Z) * sin(Two_PI_Over_Lx * X);
 	    }
-      Scalar_Concentration.Update_Ghosts();
+      Passive_Scalar.Update_Ghosts();
     }
   
   if (param_->Initial_C()==3)
@@ -296,9 +296,9 @@ void grid::Initialize()
 	      X=size_->dx()/2.+i*size_->dx();
 	      Y=size_->dy()/2.+j*size_->dy();
 	      Z=size_->dz()/2.+k*size_->dz();
-	      Scalar_Concentration(I,J,K) = sin(Two_PI_Over_Ly * Y) * sin(Two_PI_Over_Lz * Z);
+	      Passive_Scalar(I,J,K) = sin(Two_PI_Over_Ly * Y) * sin(Two_PI_Over_Lz * Z);
 	    }
-      Scalar_Concentration.Update_Ghosts();
+      Passive_Scalar.Update_Ghosts();
     }
 
 
@@ -306,14 +306,14 @@ void grid::Initialize()
     if (param_->Initial_C()==1)
     {
         //These files are initial condition for timestep=num_timestep
-        com_->read(Scalar_Concentration,"Restart_Scalar_Concentration.bin");
-        if (pc_->IsRoot()) std::cout<<"*+=*+=*+=*+=Scalar_Concentration LOADED*+=*+=*+=*+="<<std::endl;
+        com_->read(Passive_Scalar,"Restart_Passive_Scalar.bin");
+        if (pc_->IsRoot()) std::cout<<"*+=*+=*+=*+=Passive_Scalar LOADED*+=*+=*+=*+="<<std::endl;
     }
     
     if (param_->Initial_C()==0)
     {	
     	//std::cout<<"befor reading file"<<std::endl;
-        com_->read(Scalar_Concentration,"Scalar_Concentration.bin");
+        com_->read(Passive_Scalar,"Passive_Scalar.bin");
         //std::cout<<"after reading file"<<std::endl;
 
     }
@@ -321,16 +321,16 @@ void grid::Initialize()
   //prepare variables for time integration loop
   RU_int=RU;
   RU_np1=RU;
-  Scalar_Concentration_int = Scalar_Concentration;
-  Scalar_Concentration_np1 = Scalar_Concentration;
+  Passive_Scalar_int = Passive_Scalar;
+  Passive_Scalar_np1 = Passive_Scalar;
   Rho_int=Rho;
   Rho_np1=Rho;
   P0_int=P0;
   P0_np1=P0;
   //Need to compute rho at faces once here, after this, Compute_RHS_Pois computes it
   Rho_face.Equal_I_C2F(Rho);
-  //Need to compute Scalar_Concentration at faces once here, after this, Update_Scalar_Concentration computes it
-  Scalar_Concentration_face.Equal_I_C2F(Scalar_Concentration);
+  //Need to compute Passive_Scalar at faces once here, after this, Update_Passive_Scalar computes it
+  Passive_Scalar_face.Equal_I_C2F(Passive_Scalar);
   //particle part
   part.x_int=part.x; part.y_int=part.y; part.z_int=part.z; part.u_int=part.u; part.v_int=part.v; part.w_int=part.w; part.T_int=part.T;
   part.x_np1=part.x; part.y_np1=part.y; part.z_np1=part.z; part.u_np1=part.u; part.v_np1=part.v; part.w_np1=part.w; part.T_np1=part.T;
@@ -388,7 +388,7 @@ void grid::Store()
       filename_out_Data.clear();
       filename_out_Data<<param_->data_dir()<<"C"<<"_"<<num_timestep<<".bin";
       filename=filename_out_Data.str();
-      com_->write(Scalar_Concentration,(char*)(filename.c_str()));
+      com_->write(Passive_Scalar,(char*)(filename.c_str()));
       //std::cout<<"after writing C in file" <<std::endl;
       if (pc_->IsRoot())
 	{
@@ -429,7 +429,7 @@ void grid::Store()
 void grid::TimeAdvance()
 {
   Rho=Rho_np1;
-  Scalar_Concentration = Scalar_Concentration_np1;
+  Passive_Scalar = Passive_Scalar_np1;
   RU=RU_np1;
   P0=P0_np1;
   part.x=part.x_np1; part.y=part.y_np1; part.z=part.z_np1; part.u=part.u_np1; part.v=part.v_np1; part.w=part.w_np1; part.T=part.T_np1;
@@ -470,31 +470,31 @@ void grid::C_Source(double T)
     
 }
 
-void grid::Update_Scalar_Concentration()
+void grid::Update_Passive_Scalar()
 {
     U.Equal_Divide(RU_new,Rho_face); //Compute U_new at cell faces and store it in U
     //std::cout<<"before UC" <<std::endl;
-    dummy.Equal_Mult(U,Scalar_Concentration_face);//computing u_int at faces, note: we have already computed Scalar_Concentration_face in previous RK4 substep
+    dummy.Equal_Mult(U,Passive_Scalar_face);//computing u_int at faces, note: we have already computed Passive_Scalar_face in previous RK4 substep
     //std::cout<<"after UC" <<std::endl;
     dummy2.x.Equal_Div_F2C(dummy);
     //std::cout<<"before Del2" <<std::endl;
-    dummy2.y.Equal_Del2(Scalar_Concentration_int);//div(grad(C))
+    dummy2.y.Equal_Del2(Passive_Scalar_int);//div(grad(C))
     //std::cout<<"before source" <<std::endl;
     grid::C_Source(T_cur);
     //std::cout<<"before add source" <<std::endl;
-    RHS_Scalar_Concentration.Equal_LinComb(param_->D_M(),dummy2.y,-1,dummy2.x);
-    if(!params_->S1_type()) RHS_Scalar_Concentration+=S1;
+    RHS_Passive_Scalar.Equal_LinComb(param_->D_M(),dummy2.y,-1,dummy2.x);
+    if(!param_->S1_type()) RHS_Passive_Scalar+=S1;
     else{
 	U.x.Equal_Ix_F2C(U.x);
-    	RHS_Scalar_Concentration.PlusEqual_Mult(-1,U.x);
+    	RHS_Passive_Scalar.PlusEqual_Mult(-1,U.x);
     }
     //std::cout<<"before diffusion source" <<std::endl;
-    Scalar_Concentration_np1.PlusEqual_Mult((param_->dt()*RK4_postCoeff[RK4_count]),RHS_Scalar_Concentration); //Update Scalar_Concentration_np1
+    Passive_Scalar_np1.PlusEqual_Mult((param_->dt()*RK4_postCoeff[RK4_count]),RHS_Passive_Scalar); //Update Passive_Scalar_np1
     //std::cout<<"after plusEqual_Mult" <<std::endl;
-    if (RK4_count!=3) Scalar_Concentration_new.Equal_LinComb(1,Scalar_Concentration,param_->dt()*RK4_preCoeff[RK4_count],RHS_Scalar_Concentration); //update Scalar_Concentration_new
-    else Scalar_Concentration_new=Scalar_Concentration_np1;
+    if (RK4_count!=3) Passive_Scalar_new.Equal_LinComb(1,Passive_Scalar,param_->dt()*RK4_preCoeff[RK4_count],RHS_Passive_Scalar); //update Passive_Scalar_new
+    else Passive_Scalar_new=Passive_Scalar_np1;
     
-    Scalar_Concentration_face.Equal_I_C2F(Scalar_Concentration_new);
+    Passive_Scalar_face.Equal_I_C2F(Passive_Scalar_new);
 }
 
 
@@ -617,7 +617,7 @@ void grid::TimeAdvance_RK4()
   Rho_int=Rho_new;
   RU_int=RU_new;
   P0_int=P0_new;
-  Scalar_Concentration_int = Scalar_Concentration_new;
+  Passive_Scalar_int = Passive_Scalar_new;
   //particle part
   part.x_int=part.x_new; part.y_int=part.y_new; part.z_int=part.z_new; part.u_int=part.u_new; part.v_int=part.v_new; part.w_int=part.w_new; part.T_int=part.T_new;
 }
@@ -632,7 +632,7 @@ void grid::Statistics()
   double C_min=C.min();
   double C_mean=C.mean();
   double TKE2=U.mean_squares();
-  double Scalar_Concentration_mean = Scalar_Concentration.mean_squares();
+  double Passive_Scalar_mean = Passive_Scalar.mean_squares();
   double Particle_CFL_Max=0;
   double TKE,TKE_U,TKE_V,TKE_W;
   U.Equal_Divide(RU_np1,Rho_face);
@@ -662,7 +662,7 @@ void grid::Statistics()
   stat_TKE_U<<T_cur<<" "<<TKE_U<<std::endl;
   stat_TKE_V<<T_cur<<" "<<TKE_V<<std::endl;
   stat_TKE_W<<T_cur<<" "<<TKE_W<<std::endl;
-  stat_Scalar_Concentration_mean<<T_cur<<" "<<Scalar_Concentration_mean<<std::endl;
+  stat_Passive_Scalar_mean<<T_cur<<" "<<Passive_Scalar_mean<<std::endl;
   stat_P0<<T_cur<<" "<<P0<<std::endl;
   stat_CMax<<T_cur<<" "<<C_max<<std::endl;
   stat_CMin<<T_cur<<" "<<C_min<<std::endl;
@@ -682,7 +682,7 @@ void grid::Statistics()
   std::cout<<"*** Particle Maximum CFL="<<Particle_CFL_Max<<"  ,  Gas Maximum CFL="<<Gas_CFL_Max<<"  ,  Gas Maximum diffusive CFL="<<Gas_Max_Diff_CFL<<std::endl;
   std::cout<<"*** P0="<<P0<<"   ,   Number of Poisson solve iterations="<<PS_.num_iteration()<<std::endl;
   std::cout<<"*** Twice TKE_U ="<<TKE_U<<"  ,  TKE_V ="<<TKE_V<<"  ,  TKE_W ="<<TKE_W<<"  , Twice TKE ="<<TKE<<"  , Twice TKE2="<<TKE2<<std::endl;
-  std::cout<<"*** Scalar_Concentration_mean ="<<Scalar_Concentration_mean<<std::endl;
+  std::cout<<"*** Passive_Scalar_mean ="<<Passive_Scalar_mean<<std::endl;
   std::cout<<"*** Particle u_max="<<Vp_max<<"  ,  Gas interpolated u_max="<<ug_max<<"  ,  Gas u_max="<<u_max<<std::endl;
   std::cout<<"Mean energy transferred from particle to gas="<<-mean_energy_transferred<<"  ,  Balance_Index="<<Load_Balance<<std::endl;
   

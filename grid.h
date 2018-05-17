@@ -30,7 +30,7 @@ class grid
   std::ofstream stat_TKE_U;
   std::ofstream stat_TKE_V;
   std::ofstream stat_TKE_W;
-  std::ofstream stat_Scalar_Concentration_mean;
+  std::ofstream stat_Passive_Scalar_mean;
   std::ofstream stat_P0;
   std::ofstream stat_CMax;
   std::ofstream stat_CMin;
@@ -62,19 +62,19 @@ class grid
   tensor0 dP; //pressure delta form (used in Poisson equation) stored at cell center
   tensor0 RHS_Pois; //one part of RHS of Poisson equation
   tensor0 C; //particle concentration stored at cell center
-  tensor0 Scalar_Concentration; //scalar concentration stored at cell center
+  tensor0 Passive_Scalar; //scalar concentration stored at cell center
   tensor0 S1;//source function in scalar momentum equation
-  tensor0 Scalar_Concentration_int;
-  tensor0 Scalar_Concentration_new;
-  tensor0 Scalar_Concentration_np1;
+  tensor0 Passive_Scalar_int;
+  tensor0 Passive_Scalar_new;
+  tensor0 Passive_Scalar_np1;
   tensor0 Rho; //Gas density stored at cell center
   tensor0 Rho_int;
   tensor0 Rho_new;
   tensor0 Rho_np1;
   tensor0 RHS_Rho;
-  tensor0 RHS_Scalar_Concentration;
+  tensor0 RHS_Passive_Scalar;
   tensor1 Rho_face; //Gas density stored at cell faces
-  tensor1 Scalar_Concentration_face;//scalar concentration stored at cell faces
+  tensor1 Passive_Scalar_face;//scalar concentration stored at cell faces
   tensor0 T; //Gas temperature stored at cell cneter
   tensor1 dummy; //dummt array for computations
   tensor1 dummy2; //dummt array for computations
@@ -97,7 +97,7 @@ class grid
   void Store();
   void TimeAdvance(); //advance one time step
   void Update_Rho();
-  void Update_Scalar_Concentration();
+  void Update_Passive_Scalar();
   void C_Source(double);
   void Update_RU_WOP();
   void Update_P0();

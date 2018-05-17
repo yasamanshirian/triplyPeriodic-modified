@@ -58,7 +58,7 @@ int main (int argc,char *argv[] )
 	  GRID.Compute_RHS_Pois();
 	  GRID.Solve_Poisson();
 	  GRID.Update_RU_WP();
-          GRID.Update_Scalar_Concentration();
+          GRID.Update_Passive_Scalar();
       
 	  GRID.TimeAdvance_RK4();
 	}
