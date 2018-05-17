@@ -65,10 +65,8 @@ int main (int argc,char *argv[] )
       //Rho_ = GRID.Rho_np1;
       
       GRID.RU_np1.make_mean_U0(RhoU_);
-      //if (remainder(GRID.T_cur/PARAM.dt(),2) == 0 ){
-      	GRID.RU_np1.y.kill_strong_modes();
-      	GRID.RU_np1.z.kill_strong_modes();
-      //}
+      GRID.RU_np1.y.kill_strong_modes();
+      GRID.RU_np1.z.kill_strong_modes();
       //GRID.RU_np1.make_mean_zero();
       GRID.TimeAdvance();
       GRID.Statistics();

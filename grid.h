@@ -63,7 +63,7 @@ class grid
   tensor0 RHS_Pois; //one part of RHS of Poisson equation
   tensor0 C; //particle concentration stored at cell center
   tensor0 Scalar_Concentration; //scalar concentration stored at cell center
-  tensor0 g;//source function in scalar momentum equation
+  tensor0 S1;//source function in scalar momentum equation
   tensor0 Scalar_Concentration_int;
   tensor0 Scalar_Concentration_new;
   tensor0 Scalar_Concentration_np1;
@@ -98,7 +98,7 @@ class grid
   void TimeAdvance(); //advance one time step
   void Update_Rho();
   void Update_Scalar_Concentration();
-  void C_Source();
+  void C_Source(double);
   void Update_RU_WOP();
   void Update_P0();
   void Compute_Div_U_new();
