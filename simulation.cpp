@@ -19,31 +19,34 @@ int main (int argc,char *argv[] )
   MPI_Init(&argc, &argv);
   // Define required objects
   params PARAM(argv[1]);
-  //std::cout << "before defining u_mean" << std::endl;
   double U_mean[3],RhoU_[3];
   double Rho0_=PARAM.Rho0();
-  //std::cout << "PARAM.U0()" << PARAM.U0()<<std::endl;
-  //std::cout << "U_mean[0]" << U_mean[0]<<std::endl;
-  //std::cout << "before assigning u_mean" << std::endl;
+  
   U_mean[0]=PARAM.U0();
-  //std::cout << "U_mean[0]" << U_mean[0]<<std::endl;
   U_mean[1]=PARAM.V0();
   U_mean[2]=PARAM.W0();
-  //std::cout << "U_mean[1]" << U_mean[1]<<std::endl;
-//std::cout << "before assigning Ru_mean" << std::endl;
-
+  
   RhoU_[0]=U_mean[0]*Rho0_;
   RhoU_[1]=U_mean[1]*Rho0_;
   RhoU_[2]=U_mean[2]*Rho0_;
   
-  //double RhoU_ = Rho0_*U0_;
-  //tensor0 Rho_,RhoU_;
+  double V_mean[3],RhoV_[3];
+  double Rho0_forV =PARAM.Rho_forV();
+  
+  V_mean[0]=PARAM.V0_1();
+  V_mean[1]=PARAM.V0_2();
+  V_mean[2]=PARAM.V0_3();
+  
+  RhoV_[0]=V_mean[0]*Rho0_forV;
+  RhoV_[1]=V_mean[1]*Rho0_forV;
+  RhoV_[2]=V_mean[2]*Rho0_forV;
+  
+  
   proc PROC;
   gridsize GSIZE(&PARAM,&PROC);
   communicator COMM(&GSIZE,&PARAM,&PROC);
   grid GRID(&GSIZE,&PARAM,&PROC,&COMM);
   GRID.Initialize();
-  //std::cout << "before loop" << std::endl;
   // Time integration loop
   do {
       PARAM.update(GRID.T_cur);
@@ -53,26 +56,34 @@ int main (int argc,char *argv[] )
 	  GRID.Update_Rho();
 	  GRID.Update_P0();
 	  GRID.Update_Particle();
-	  GRID.Update_RU_WOP();
+	  //GRID.Update_Passive_Scalar();
+ 	  //GRID.Update_RV_WOQ();
+	  //GRID.Compute_Div_V_new();
+	  //GRID.Compute_RHS_Pois_Q();
+	  //GRID.Solve_Poisson_Q();
+	  //GRID.Update_RV_WQ();
+          
+          GRID.Update_RU_WOP();
 	  GRID.Compute_Div_U_new();
 	  GRID.Compute_RHS_Pois();
 	  GRID.Solve_Poisson();
 	  GRID.Update_RU_WP();
-          GRID.Update_Passive_Scalar();
-      
+          
 	  GRID.TimeAdvance_RK4();
 	}
-      //Rho_ = GRID.Rho_np1;
-      
+     
       GRID.RU_np1.make_mean_U0(RhoU_);
-      GRID.RU_np1.y.kill_strong_modes();
-      GRID.RU_np1.z.kill_strong_modes();
+      if(PARAM.elongated_box()){
+      	GRID.RU_np1.y.kill_strong_modes();
+      	GRID.RU_np1.z.kill_strong_modes();
+      }
+      //GRID.RV_np1.make_mean_U0(RhoV_);
       //GRID.RU_np1.make_mean_zero();
       GRID.TimeAdvance();
       GRID.Statistics();
   }while ((GRID.T_cur<PARAM.T_final())&&(!GRID.Touch()));
-  //std::cout<< "before finalizing mpi"<<std::endl;
+  
   MPI_Finalize();
-  //std::cout<< "after finalizing mpi"<<std::endl;
+  
 }
   

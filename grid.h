@@ -30,6 +30,10 @@ class grid
   std::ofstream stat_TKE_U;
   std::ofstream stat_TKE_V;
   std::ofstream stat_TKE_W;
+  //std::ofstream stat_VV;
+  std::ofstream stat_TKEV_V1;
+  std::ofstream stat_TKEV_V2;
+  std::ofstream stat_TKEV_V3;
   std::ofstream stat_Passive_Scalar_mean;
   std::ofstream stat_P0;
   std::ofstream stat_CMax;
@@ -58,12 +62,23 @@ class grid
   tensor1 RHS_RU;
   tensor1 U; //u stored at cell center
   //tensor1 UC; //concentration *u stored at cell faces
+  tensor1 RV; //rho*u stored at cell faces
+  tensor1 RV_int; //previous RK4 substep value
+  tensor1 RV_new; //next RK4 substep value
+  tensor1 RV_np1; //next timestep value
+  tensor1 RV_WQ; //momentum with pressure gradient effect (should match the divergence condition)
+  tensor1 RHS_RV;
+  tensor1 V; //u stored at cell center
   tensor0 P; //pressure stored at cell center
   tensor0 dP; //pressure delta form (used in Poisson equation) stored at cell center
+  tensor0 Q;
+  tensor0 dQ;
   tensor0 RHS_Pois; //one part of RHS of Poisson equation
+  tensor0 RHS_Pois_Q;
   tensor0 C; //particle concentration stored at cell center
   tensor0 Passive_Scalar; //scalar concentration stored at cell center
   tensor0 S1;//source function in scalar momentum equation
+  tensor1 S2;//vector source for vector field momentum equation
   tensor0 Passive_Scalar_int;
   tensor0 Passive_Scalar_new;
   tensor0 Passive_Scalar_np1;
@@ -81,6 +96,7 @@ class grid
   //tensor0 dummyS; //dummt array for computations on tensor0
   tensor0 divergence; //to store divergence of momentum/velocity
   tensor0 RHS_Part_Temp; //Interpolated RHS of particle energy equation (due to the algorithm it has to be saved)
+  double Rho_forV;
   double P0; // mean thermodynamic pressure
   double P0_int;
   double P0_new;
@@ -105,6 +121,13 @@ class grid
   void Compute_RHS_Pois();
   void Solve_Poisson();
   void Update_RU_WP();
+  void V_Source(double);
+  void Update_RV_WOQ();
+  //void Update_P0();
+  void Compute_Div_V_new();
+  void Compute_RHS_Pois_Q();
+  void Solve_Poisson_Q();
+  void Update_RV_WQ();
   void TimeAdvance_RK4();
   void Test_Poisson();
   void Update_Particle();
