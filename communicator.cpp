@@ -179,7 +179,7 @@ void communicator::SEND_RECV_BLOCKING(tensor0 &T)
    MPI_Irecv(Rbuf[0],(Nx)*(Ny)*bs,MPI_DOUBLE,procFRONT,1,MPI_COMM_WORLD,&request_recv[0]);
    MPI_Irecv(Rbuf[1],(Nx)*(Ny)*bs,MPI_DOUBLE,procREAR,0,MPI_COMM_WORLD,&request_recv[1]);
    c=0;;
-   for (int i(0);i<Nx;i++)
+  for (int i(0);i<Nx;i++)
      for (int j(0);j<Ny;j++)
        for (int k(Nz-2*bs);k<Nz-bs;k++)
 	 Sbuf[0][c++]=T(i,j,k);

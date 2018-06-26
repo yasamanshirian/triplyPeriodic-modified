@@ -57,11 +57,11 @@ int main (int argc,char *argv[] )
 	  GRID.Update_P0();
 	  GRID.Update_Particle();
 	  //GRID.Update_Passive_Scalar();
- 	  //GRID.Update_RV_WOQ();
-	  //GRID.Compute_Div_V_new();
-	  //GRID.Compute_RHS_Pois_Q();
-	  //GRID.Solve_Poisson_Q();
-	  //GRID.Update_RV_WQ();
+ 	  GRID.Update_RV_WOQ();
+	  
+	  GRID.Compute_RHS_Pois_Q();
+	  GRID.Solve_Poisson_Q();
+	  GRID.Update_RV_WQ();
           
           GRID.Update_RU_WOP();
 	  GRID.Compute_Div_U_new();
@@ -77,6 +77,10 @@ int main (int argc,char *argv[] )
       	GRID.RU_np1.y.kill_strong_modes();
       	GRID.RU_np1.z.kill_strong_modes();
       }
+      if(GRID.num_timestep ==2)
+	{
+		GRID.CopyBox();
+	}
       //GRID.RV_np1.make_mean_U0(RhoV_);
       //GRID.RU_np1.make_mean_zero();
       GRID.TimeAdvance();

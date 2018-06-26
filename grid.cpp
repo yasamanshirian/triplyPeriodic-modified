@@ -1,6 +1,7 @@
 #include <fstream>
 #include <sstream>
 #include <math.h>
+#include <algorithm> 
 #include "proc.h"
 #include "params.h"
 #include "gridsize.h"
@@ -152,7 +153,7 @@ void grid::Initialize()
     }
 
   if (param_->Initial()==4)
-    {
+   {
       double X,Y,Z;
       int I,J,K;
       for (int k=size_->kl();k<=size_->kh();k++)
@@ -252,7 +253,6 @@ void grid::Initialize()
       T_cur=0;
       num_timestep=0;
     }
-    
     if (param_->Initial_V()==5)
     {
       double X,Y,Z;
@@ -666,14 +666,14 @@ void grid::Update_RV_WOQ()
   dummy2.z.Equal_Div_F2C(dummy);
   RHS_RV.z -= dummy2.z;
   //Add artificial force
-  //RHS_RV.PlusEqual_Mult(param_->A(),RU_int);
+  RHS_RV.PlusEqual_Mult(param_->A(),RU_int);
   if(!param_->S2_type()){
 	grid::V_Source(T_cur);
 	 RHS_RV+=S2;
   }
   else{
-      dummy.x.Equal_Ix_F2C(U.x);
-      RHS_RV.PlusEqual_Mult(-1,	U);	
+      
+      RHS_RV.y.PlusEqual_Mult(-1,U.x);	
 	
   }
   
@@ -1160,6 +1160,7 @@ void grid::Test_Poisson()
 }
 
 
+
 void grid::open_stat_file(char *name,std::ofstream &file)
 {
   std::string s(name);
@@ -1169,5 +1170,307 @@ void grid::open_stat_file(char *name,std::ofstream &file)
   file.open((char*)(filename.c_str()),std::ios::out|std::ios::app);
 }
 
+void grid::CopyBox(){
+  int numProcxBox =(size_->Lx()/size_->Ly() + pc_->NX() - 1)/(size_->Lx()/size_->Ly());
+  if (pc_->RANK() == 0) std::cout <<"numProcxBox: " << numProcxBox << std::endl; 
+  bool sender = (pc_->I()< numProcxBox)?true:false;
+  bool receiver = (pc_->I() < pc_->NX()/(size_->Lx()/size_->Lz()))?false:true;
+  MPI_Request request_send[2];
+  MPI_Request request_recv[1];
+  MPI_Status stat_send[2];
+  MPI_Status stat_recv[1];
+  int batch_size[2];
+  int b_offset = size_->bs();
+  MPI_Datatype memtype,memtype2;
+  //int gsizes[3];
+  //int psizes[3];
+  int start_indices_l[3];
+  //int start_indices_g[3];
+  int lsizes[3];
+  int memsizes[3];
+  //int TNOD;
+   
+  //TNOD=size_->Nx_tot()*size_->Ny_tot()*size_->Nz_tot()*sizeof(double);
+  //gsizes[0]=size_->Nz_tot();  gsizes[1]=size_->Ny_tot();  gsizes[2]=size_->Nx_tot();
+  //psizes[0]=pc_->NZ();  psizes[1]=pc_->NY();  psizes[2]=pc_->NX();
+  lsizes[0]=size_->Nz()-2*size_->bs();  lsizes[1]=size_->Ny()-2*size_->bs();  lsizes[2]=size_->Nx()-2*size_->bs();
+  //start_indices_g[0]=size_->kl();  start_indices_g[1]=size_->jl();  start_indices_g[2]=size_->il();
+  memsizes[0]=size_->Nz();  memsizes[1]=size_->Ny();  memsizes[2]=size_->Nx();
+  start_indices_l[0]=size_->bs();  start_indices_l[1]=size_->bs();  //start_indices_l[2]=size_->bs();
+ // MPI_Type_create_subarray(3,gsizes,lsizes,start_indices_g,MPI_ORDER_C,MPI_DOUBLE,&filetype);
+ // MPI_Type_commit(&filetype);
+  //MPI_Type_create_subarray(3,memsizes,lsizes,start_indices_l,MPI_ORDER_C,MPI_DOUBLE,&memtype);
+  //MPI_Type_commit(&memtype);
+   if(receiver && !sender){
+	
+        batch_size[0] = std::min(size_->ih() - (int)(size_->il()/(size_->Lz()/size_->dx()) + 1 )*(int)(size_->Lz()/size_->dx()), size_->ih() - size_->il()) + 1; 
+	batch_size[1] = size_->Nx() - 2*size_->bs()  - batch_size[0];
+        int r;
+	if(pc_->RANK()%pc_->NX()==1)r = pc_->RANK() - numProcxBox;
+	else r = pc_->RANK() - 2*numProcxBox;
+	std::cout << "my rank in receiving pool in x:" << pc_->RANK() << " batch_size[1]: " << batch_size[1] << " proc Im receiving data from: " << r << std::endl; 
+        int s = (batch_size[1])*lsizes[0]*lsizes[1];
+	//MPI_Irecv(&RU.x(b_offset,b_offset,b_offset),s,MPI_DOUBLE,r, 0,MPI_COMM_WORLD,&request_recv[0]);			
+	MPI_Irecv(&RU.x(0,0,0),s,MPI_DOUBLE,r, 0,MPI_COMM_WORLD,&request_recv[0]);			
+	
+	
+        MPI_Waitall(1,&request_recv[0],&stat_recv[0]);  
+}
+ if(sender){
+       int r1 = pc_->RANK() +  numProcxBox; 
+       batch_size[0] = size_->Nx() -2*size_->bs() -  (size_->Lz())/size_->dx(); 
+       batch_size[1] = size_->Lz()/size_->dx() - batch_size[0];
+       //int s1 =size_->Ny()*size_->Nz()*batch_size[1];
+       std::cout << "my rank in sending pool in x   :" << pc_->RANK() << " batch_size[1]: " << batch_size[1] << " proc Im sending data to    : " << r1 << std::endl; 
+       //lsizes[0]=size_->Nz()-2*size_->bs();  lsizes[1]=size_->Ny()-2*size_->bs();
+       lsizes[2]=batch_size[1];
+       //start_indices_g[0]=size_->kl();  start_indices_g[1]=size_->jl();  start_indices_g[2]=size_->il()
+       //start_indices_l[0]=size_->bs();  start_indices_l[1]=size_->bs();  
+       start_indices_l[2]=size_->bs() + batch_size[0];
+       MPI_Type_create_subarray(3,memsizes,lsizes,start_indices_l,MPI_ORDER_C,MPI_DOUBLE,&memtype);
+       MPI_Type_commit(&memtype);
+       
+       //int s2 =lsizes[0]*lsizes[1]*batch_size[1]; 
+       //MPI_Isend(&RU.x(b_offset+batch_size[0]-1,b_offset,b_offset),s2,MPI_DOUBLE,r1, 0,MPI_COMM_WORLD,&request_send[0]);
+       MPI_Isend(&RU.x(0,0,0),1,memtype,r1, 0,MPI_COMM_WORLD,&request_send[0]);
+       std::cout << "sending "<<std::endl;
+       MPI_Waitall(1,&request_send[0],&stat_send[0]);     
+       r1 = pc_->RANK() +  2*numProcxBox ;
+       batch_size[0] = -2*(size_->Nx()-2*size_->bs()) + 3*(size_->Lz())/size_->dx();
+      
+       batch_size[1] = (size_->Nx()-2*size_->bs())-batch_size[0]; 	
+       
+       std::cout <<"my rank in sending pool in x   :" << pc_->RANK() <<  " batch_size[0]: " << batch_size[0] << " proc Im sending data to    : " << r1 <<  std::endl; 
+       //s2 =lsizes[0]*lsizes[1]*batch_size[0]; 
+       lsizes[2] = batch_size[0];
+       start_indices_l[2] = size_->bs() + batch_size[1];
+       MPI_Type_create_subarray(3,memsizes,lsizes,start_indices_l,MPI_ORDER_C,MPI_DOUBLE,&memtype2);
+       MPI_Type_commit(&memtype2);
+       
+ 
+       //MPI_Isend(&RU.x(b_offset+batch_size[1]-1,b_offset,b_offset),s2,MPI_DOUBLE,r1, 0,MPI_COMM_WORLD,&request_send[0]);		
+       MPI_Isend(&RU.x(0,0,0),1,memtype2,r1, 0,MPI_COMM_WORLD,&request_send[0]);		
+       if(receiver){
+	       batch_size[0]= size_->Nx()-2*size_->bs() - size_->Lz()/size_->dx();
+	       batch_size[1]= size_->Lz()/size_->dx() ;
+	       for (int i(size_->bs()); i<batch_size[0]+size_->bs(); i++)
+		       for (int j(size_->bs()); j<size_->Ny()-size_->bs(); j++)
+			       for (int k(size_->bs()); k<size_->Nz()-size_->bs(); k++){
+						RU.x(i+batch_size[1],j,k) = RU.x(i,j,k);
+						RU.y(i+batch_size[1],j,k) = RU.y(i,j,k);
+						RU.z(i+batch_size[1],j,k) = RU.z(i,j,k);
+				}
+       } 
+//}
+   MPI_Waitall(1,&request_send[0],&stat_send[0]);
+   //MPI_Waitall(6,&request_recv[0],&stat_recv[0]);  
+  }
+//std::cout <<" finishing communication" <<std::endl;
+if(receiver && !sender){
+	
+        batch_size[0] = std::min(size_->ih() - (int)(size_->il()/(size_->Lz()/size_->dx()) + 1 )*(int)(size_->Lz()/size_->dx()), size_->ih() - size_->il()) + 1; 
+	batch_size[1] = size_->Nx() - 2*size_->bs()  - batch_size[0];
+        int r;
+	if(pc_->RANK()%pc_->NX()==1)r = pc_->RANK() - numProcxBox;
+	else r = pc_->RANK() - 2*numProcxBox;
+	 //std::cout << "my rank in receiving pool in x:" << pc_->RANK() << " batch_size[1]: " << batch_size[1] << " proc Im receiving data from: " << r << std::endl; 
+        int s = (batch_size[1])*lsizes[0]*lsizes[1];
+	MPI_Irecv(&RU.y(0,0,0),s,MPI_DOUBLE,r, 0,MPI_COMM_WORLD,&request_recv[0]);			
+	
+        MPI_Waitall(1,&request_recv[0],&stat_recv[0]);  
+}
+ if(sender){
+       int r1 = pc_->RANK() +  numProcxBox; 
+       batch_size[0] = size_->Nx() -2*size_->bs() -  (size_->Lz())/size_->dx(); 
+       batch_size[1] = size_->Lz()/size_->dx() - batch_size[0];
+       //int s1 =size_->Ny()*size_->Nz()*batch_size[1];
+       //std::cout <<"my rank in sending pool in x:" << pc_->RANK() <<   " batch_size[1]: " << batch_size[1] <<" proc Im sending data to: " << r1 << std::endl; 
+     
+       int s2=lsizes[0]*lsizes[1]*batch_size[1]; 
+       //MPI_Isend(&RU.y(b_offset+batch_size[0]-1,b_offset,b_offset),s2,MPI_DOUBLE,r1, 0,MPI_COMM_WORLD,&request_send[0]);
+       MPI_Isend(&RU.y(0,0,0),1,memtype,r1, 0,MPI_COMM_WORLD,&request_send[0]);
+       MPI_Waitall(1,&request_send[0],&stat_send[0]);     
+       r1 = pc_->RANK() +  2*numProcxBox ;
+       batch_size[0] = -2*(size_->Nx()-2*size_->bs()) + 3*(size_->Lz())/size_->dx();
+      
+       batch_size[1] = (size_->Nx()-2*size_->bs())-batch_size[0]; 	
+       
+       //std::cout <<"my rank in sending pool in x:" << pc_->RANK() <<  " batch_size[0]: " << batch_size[0] << " proc Im sending data to: " << r1 <<  std::endl; 
+       s2 =lsizes[0]*lsizes[1]*batch_size[0]; 
+       //MPI_Isend(&RU.y(b_offset+batch_size[1]-1,b_offset,b_offset),s2,MPI_DOUBLE,r1, 0,MPI_COMM_WORLD,&request_send[0]);		
+       MPI_Isend(&RU.y(0,0,0),1,memtype2,r1, 0,MPI_COMM_WORLD,&request_send[0]);		
+        
+ 
+//}
+   MPI_Waitall(1,&request_send[0],&stat_send[0]);
+   //MPI_Waitall(6,&request_recv[0],&stat_recv[0]);  
+  }
+if(receiver && !sender){
+	
+        batch_size[0] = std::min(size_->ih() - (int)(size_->il()/(size_->Lz()/size_->dx()) + 1 )*(int)(size_->Lz()/size_->dx()), size_->ih() - size_->il()) + 1; 
+	batch_size[1] = size_->Nx() - 2*size_->bs()  - batch_size[0];
+        int r;
+	if(pc_->RANK()%pc_->NX()==1)r = pc_->RANK() - numProcxBox;
+	else r = pc_->RANK() - 2*numProcxBox;
+	 std::cout << "my rank in receiving pool in z:" << pc_->RANK() << " batch_size[1]: " << batch_size[1] << " proc Im receiving data from: " << r << std::endl; 
+        int s = (batch_size[1])*lsizes[0]*lsizes[1];
+	MPI_Irecv(&RU.z(0,0,0),s,MPI_DOUBLE,r, 0,MPI_COMM_WORLD,&request_recv[0]);			
+	
+        MPI_Waitall(1,&request_recv[0],&stat_recv[0]);  
+}
+ if(sender){
+       int r1 = pc_->RANK() +  numProcxBox; 
+       batch_size[0] = size_->Nx() -2*size_->bs() -  (size_->Lz())/size_->dx(); 
+       batch_size[1] = size_->Lz()/size_->dx() - batch_size[0];
+       //int s1 =size_->Ny()*size_->Nz()*batch_size[1];
+       std::cout <<"my rank in sending pool in z:" << pc_->RANK() <<   " batch_size[1]: " << batch_size[1] <<" proc Im sending data to: " << r1 << std::endl; 
+     
+       int s2 = lsizes[0]*lsizes[1]*batch_size[1]; 
+       //MPI_Isend(&RU.z(b_offset+batch_size[0]-1,b_offset,b_offset),s2,MPI_DOUBLE,r1, 0,MPI_COMM_WORLD,&request_send[0]);
+       MPI_Isend(&RU.z(0,0,0),1,memtype,r1, 0,MPI_COMM_WORLD,&request_send[0]);
+        MPI_Waitall(1,&request_send[0],&stat_send[0]);     
+       r1 = pc_->RANK() +  2*numProcxBox ;
+       batch_size[0] = -2*(size_->Nx()-2*size_->bs()) + 3*(size_->Lz())/size_->dx();
+      
+       batch_size[1] = (size_->Nx()-2*size_->bs())-batch_size[0]; 	
+       
+       std::cout <<"my rank in sending pool in z:" << pc_->RANK() <<  " batch_size[0]: " << batch_size[0] << " proc Im sending data to: " << r1 <<  std::endl; 
+       s2 =lsizes[0]*lsizes[1]*batch_size[0]; 
+       //MPI_Isend(&RU.z(b_offset+batch_size[1]-1,b_offset,b_offset),s2,MPI_DOUBLE,r1, 0,MPI_COMM_WORLD,&request_send[0]);		
+       MPI_Isend(&RU.z(0,0,0),1,memtype2,r1, 0,MPI_COMM_WORLD,&request_send[0]);		
+        
+ 
+//}
+   MPI_Waitall(1,&request_send[0],&stat_send[0]);
+   //MPI_Waitall(6,&request_recv[0],&stat_recv[0]);  
+  }
+if(receiver && !sender){
+	
+        batch_size[0] = std::min(size_->ih() - (int)(size_->il()/(size_->Lz()/size_->dx()) + 1 )*(int)(size_->Lz()/size_->dx()), size_->ih() - size_->il()) +1; 
+	batch_size[1] = size_->Nx() -2*size_->bs() - batch_size[0];
+        int r;
+	if(pc_->RANK()%pc_->NX()==1)r = pc_->RANK() - numProcxBox;
+	else r = pc_->RANK() - 2*numProcxBox;
+	std::cout << "my rank in receiving pool in x:" << pc_->RANK() << " proc Im receiving data from: " << r << " batch size : " << batch_size[0] << std::endl; 
+	int s = (batch_size[0])*lsizes[0]*lsizes[1];
 
+	MPI_Irecv(&RU.x(0,0,0),s,MPI_DOUBLE,r, 0,MPI_COMM_WORLD,&request_recv[0]);
 
+ MPI_Waitall(1,&request_recv[0],&stat_recv[0]);  
+}
+ if(sender){
+       int r1 = pc_->RANK() +  numProcxBox; 
+       batch_size[0] = 2*(size_->Nx()-2*size_->bs()) - 2*(size_->Lz()/size_->dx()) - 1; 
+       batch_size[1] = size_->Nx() -2*size_->bs() - batch_size[0];
+       int s1 =lsizes[0]*lsizes[1]*batch_size[0];
+       std::cout << "my rank in sending pool in x  :" << pc_->RANK() <<  " proc Im sending data to  : " << r1 << " batch size  : " << batch_size[0] << std::endl; 
+       MPI_Type_free(&memtype);
+       lsizes[2]=batch_size[0];
+       //start_indices_g[0]=size_->kl();  start_indices_g[1]=size_->jl();  start_indices_g[2]=size_->il()
+       //start_indices_l[0]=size_->bs();  start_indices_l[1]=size_->bs();  
+       start_indices_l[2]=size_->bs();
+       MPI_Type_create_subarray(3,memsizes,lsizes,start_indices_l,MPI_ORDER_C,MPI_DOUBLE,&memtype);
+       MPI_Type_commit(&memtype);
+       
+       //MPI_Isend(&RU.x(b_offset,b_offset,b_offset),s1,MPI_DOUBLE,r1, 0,MPI_COMM_WORLD,&request_send[0]);
+       MPI_Isend(&RU.x(0,0,0),1,memtype,r1, 0,MPI_COMM_WORLD,&request_send[0]);
+       MPI_Waitall(1,&request_send[0],&stat_send[0]);
+       r1 = pc_->RANK() +  2*numProcxBox ;
+       //batch_size[0] = 2*(size_->Nx() - 2*size_->bs()) + (size_->Nx() + 1 -2*size_->bs()) - 3*(size_->Lz())/size_->dx();
+      
+       //batch_size[1] = (size_->Nx() + 1 -2*size_->bs())-batch_size[0]; 	
+       
+       batch_size[0] = size_->Lz()/size_->dx();
+       batch_size[1] = (size_->Nx()-2*size_->bs())-batch_size[0]; 	
+       s1 =(lsizes[0]*lsizes[1])*batch_size[0];
+       std::cout <<"my rank in sending pool in x:" << pc_->RANK() <<  " proc Im sending data to: " << r1 << " batch size: " << batch_size[0] << std::endl; 
+       MPI_Type_free(&memtype2);
+       lsizes[2]=batch_size[0];
+       MPI_Type_create_subarray(3,memsizes,lsizes,start_indices_l,MPI_ORDER_C,MPI_DOUBLE,&memtype2);
+       MPI_Type_commit(&memtype2);
+       
+       //MPI_Isend(&RU.x(b_offset,b_offset,b_offset),s1,MPI_DOUBLE,r1, 0,MPI_COMM_WORLD,&request_send[0]);
+       MPI_Isend(&RU.x(0,0,0),1,memtype2,r1, 0,MPI_COMM_WORLD,&request_send[0]);
+		//std::cout <<"before last wait all" <<std::endl;
+    
+
+      MPI_Waitall(1,&request_send[0],&stat_send[0]);
+   //MPI_Waitall(6,&request_recv[0],&stat_recv[0]); 
+   //std::cout << " my rank : "<< pc_->RANK()  << std::endl; 
+   }
+if(receiver && !sender){
+	
+        batch_size[0] = std::min(size_->ih() - (int)(size_->il()/(size_->Lz()/size_->dx()) + 1 )*(int)(size_->Lz()/size_->dx()), size_->ih() - size_->il()) + 1; 
+	batch_size[1] = size_->Nx() - 2*size_->bs() - batch_size[0];
+        int r;
+	if(pc_->RANK()%pc_->NX()==1)r = pc_->RANK() - numProcxBox;
+	else r = pc_->RANK() - 2*numProcxBox;
+	 std::cout << "my rank in receiving pool in y :" << pc_->RANK() <<  " proc Im receiving data from: " << r << std::endl; 
+	 
+			
+	int s = (batch_size[0])*lsizes[0]*lsizes[1];
+	 //MPI_Irecv(&RU.y(0,0,0),1,memtype,r, 1,MPI_COMM_WORLD,&request_recv[1]);
+	
+
+	MPI_Irecv(&RU.y(0,0,0),s,MPI_DOUBLE,r, 0,MPI_COMM_WORLD,&request_recv[0]);
+	
+  MPI_Waitall(1,&request_recv[0],&stat_recv[0]);  
+}
+ if(sender){
+      
+   int r1 = pc_->RANK() +  numProcxBox; 
+       //batch_size[0] = 2*size_->Nx() - 2*size_->Lz()/size_->dx(); 
+       //batch_size[1] = size_->Nx() - batch_size[0];
+       //int s1 =size_->Ny()*size_->Nz()*batch_size[0];
+       std::cout <<"my rank in sending pool in y:" << pc_->RANK() <<  " proc Im sending data to: " << r1 << std::endl; 
+       //MPI_Isend(&RU.y(b_offset,b_offset,b_offset),s1,MPI_DOUBLE,r1, 0,MPI_COMM_WORLD,&request_send[0]);
+       MPI_Isend(&RU.y(0,0,0),1,memtype,r1, 0,MPI_COMM_WORLD,&request_send[0]);
+       MPI_Waitall(1,&request_send[0],&stat_send[0]); 
+ 
+       r1 = pc_->RANK() +  2*numProcxBox ;
+       //batch_size[0] = size_->Lz()/size_->dx();
+       //batch_size[1] = (size_->Nx())-batch_size[0]; 	
+       //s1 =size_->Ny()*size_->Nz()*batch_size[0];
+       //std::cout <<"my rank in sending pool in y:" << pc_->RANK() <<  " proc Im sending data to: " << r1 <<  std::endl; 
+       //MPI_Isend(&RU.y(b_offset,b_offset,b_offset),s1,MPI_DOUBLE,r1, 0,MPI_COMM_WORLD,&request_send[0]);
+       MPI_Isend(&RU.y(0,0,0),1,memtype2,r1, 0,MPI_COMM_WORLD,&request_send[0]);
+       MPI_Waitall(1,&request_send[0],&stat_send[0]);
+     
+   }
+if(receiver && !sender){
+	
+        batch_size[0] = std::min(size_->ih() - (int)(size_->il()/(size_->Lz()/size_->dx()) + 1 )*(int)(size_->Lz()/size_->dx()), size_->ih() - size_->il()) + 1 ; 
+	batch_size[1] = size_->Nx() - 2*size_->bs() - batch_size[0];
+        int r;
+	if(pc_->RANK()%pc_->NX()==1)r = pc_->RANK() - numProcxBox;
+	else r = pc_->RANK() - 2*numProcxBox;
+	 std::cout << "my rank in receiving pool in z:" << pc_->RANK() <<  " proc Im receiving data from: " << r << std::endl; 
+	int s = (batch_size[0])*lsizes[0]*lsizes[1];
+	MPI_Irecv(&RU.z(0,0,0),s,MPI_DOUBLE,r,0 ,MPI_COMM_WORLD,&request_recv[0]);
+	
+        MPI_Waitall(1,&request_recv[0],&stat_recv[0]);  
+}
+ if(sender){
+   
+	int r1 = pc_->RANK() +  numProcxBox; 
+       //batch_size[0] = 2*size_->Nx() - 2*size_->Lz()/size_->dx(); 
+       //batch_size[1] = size_->Nx() - batch_size[0];
+       //int s1 =size_->Ny()*size_->Nz()*batch_size[0];
+       std::cout <<"my rank in sending pool in z:" << pc_->RANK() <<  " proc Im sending data to: " << r1 << std::endl; 
+       //MPI_Isend(&RU.z(b_offset,b_offset,b_offset),s1,MPI_DOUBLE,r1, 0,MPI_COMM_WORLD,&request_send[0]);
+       MPI_Isend(&RU.z(0,0,0),1,memtype,r1, 0,MPI_COMM_WORLD,&request_send[0]);
+       MPI_Waitall(1,&request_send[0],&stat_send[0]); 
+       
+ 
+       r1 = pc_->RANK() +  2*numProcxBox ;
+       //batch_size[0] = size_->Lz()/size_->dx();
+       //batch_size[1] = (size_->Nx())-batch_size[0]; 	
+       //s1 =size_->Ny()*size_->Nz()*batch_size[0];
+       std::cout <<"my rank in sending pool in z:" << pc_->RANK() <<  " proc Im sending data to: " << r1 <<  std::endl; 
+       //MPI_Isend(&RU.z(b_offset,b_offset,b_offset),s1,MPI_DOUBLE,r1, 1,MPI_COMM_WORLD,&request_send[1]);
+       MPI_Isend(&RU.z(0,0,0),1,memtype2,r1, 0,MPI_COMM_WORLD,&request_send[0]);
+	
+	
+   MPI_Waitall(1,&request_send[0],&stat_send[0]); 
+   }
+}
