@@ -23,6 +23,8 @@ params::params(char *address)
   param_trimmed_in>>Nx_tot_>>Ny_tot_>>Nz_tot_;
   param_trimmed_in>>Lx_>>Ly_>>Lz_;
   param_trimmed_in>>elongated_box_;
+  param_trimmed_in>>solve_for_scalar_;
+  param_trimmed_in>>solve_for_vector_;
   param_trimmed_in>>bs_;
   param_trimmed_in>>Np_track_;
   param_trimmed_in>>T_final_>>dt_>>threshold_;

@@ -28,6 +28,7 @@ class params
   //dimensional parameters
   double Lx_,Ly_,Lz_; //domain size
   int elongated_box_;
+  int solve_for_scalar_,solve_for_vector_;
   double gx_,gy_,gz_,gx1_,gy1_,gz1_,gx2_,gy2_,gz2_; //gravitioanl forces
   double A_,A1_,A2_; //forcing coefficient befor and after threshold
   double Cp_,Cv_,R_; //specific heat coeffs.
@@ -62,6 +63,8 @@ class params
   double Ly() const{ return Ly_; } 
   double Lz() const{ return Lz_; } 
   double elongated_box() const{return elongated_box_;}
+  double solve_for_scalar() const{return solve_for_scalar_;}
+  double solve_for_vector() const{return solve_for_vector_;}
   double Tp() const{return Tp_;} //Particle momentum relaxation time
   double R() {return R_;}
   double P0() {return P0_;}

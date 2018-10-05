@@ -132,7 +132,7 @@ class grid
   void Test_Poisson();
   void Update_Particle();
   void Statistics();
-  void CopyBox();
+  void CopyBox();//copy box in x direction , multiple times
   bool Touch(); //=0/1 in touch.check (1: exit code now, 0: contunue) this function actually read from file
 };
 #endif               
