@@ -6,8 +6,9 @@ double Vector_Source_x(double x, double y,double z,double t){
         return 0.;
 }
 double Vector_Source_y(double x, double y,double z,double t){
-        double K = 4.0;
-	return cos(K*x);
+        double K = 8.;
+	double A = 1.;
+	return A*cos(K*x);
 }
 double Vector_Source_z(double x, double y,double z,double t){
 	return 0.;

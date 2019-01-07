@@ -583,7 +583,13 @@ void grid::Store()
       filename_out_Data<<param_->data_dir()<<"Rho"<<"_"<<num_timestep<<".bin";
       filename=filename_out_Data.str();
       com_->write(Rho,(char*)(filename.c_str()));
-    }
+      
+      //filename_out_Data.str("");
+      //filename_out_Data.clear();
+      //filename_out_Data<<param_->data_dir()<<"S1"<<"_"<<num_timestep<<".bin";
+      //filename=filename_out_Data.str();
+      //com_->write(S1,(char*)(filename.c_str()));
+}
 }
 
 void grid::TimeAdvance()
@@ -668,7 +674,8 @@ void grid::Update_RV_WOQ()
   //RHS_RV.PlusEqual_Mult(param_->A(),RU_int);
   if(!param_->S2_type()){
 	grid::V_Source(T_cur);
-	 RHS_RV+=S2;
+	S2 -= S2.mean();
+	RHS_RV+=S2;
   }
   else{
       dummy.x.Equal_Divide(RU_int.x,Rho_face.x); //comupte u_int at faces (note: Rho_face is already computed from previous sub-step @ Compute_RHS_Pois)
@@ -745,7 +752,10 @@ void grid::Update_Passive_Scalar()
     grid::C_Source(T_cur);
     //std::cout<<"before add source" <<std::endl;
     RHS_Passive_Scalar.Equal_LinComb(param_->D_M(),dummy2.y,-1,dummy2.x);
-    if(!param_->S1_type()) RHS_Passive_Scalar+=S1;
+    if(!param_->S1_type()){
+	S1 -= S1.mean(); 
+	RHS_Passive_Scalar+=S1;
+	}
     else{
 	dummy.x.Equal_Ix_F2C(U.x);
     	RHS_Passive_Scalar.PlusEqual_Mult(-1,dummy.x);
@@ -1142,7 +1152,7 @@ void grid::open_stat_file(char *name,std::ofstream &file)
 }
 
 void grid::CopyBox(){
-  //this function is written only for Nx=128, Ny=Nz =64, for 24 proc with layout 3*2*4
+  //this function is written only for Nx=256, Ny=Nz =64, for 48 proc with layout 4*4*3
   //sending data is in x,y,z direction seperately with divinding 2 receiving processor into the beginning and ending portion
   //beginning of each processor corresponds to ending part of 2PI-So receiving data is disected not from beginning of 2PI- 
   //whereas ending portion of the receiving processors corresponds to beginning part of 2PI
@@ -1170,15 +1180,15 @@ void grid::CopyBox(){
 
   if(receiver && !sender){
         //finding size of receiving data
-  	batch_size[0] = std::min(size_->ih() - (int)(size_->il()/N2PI+ 1 )*(int)(N2PI),
-				 size_->ih() - size_->il()) + 1; 
-	batch_size[1] = size_->Nx() - 2*size_->bs()  - batch_size[0];
+  	//batch_size[0] =  size_->ih() - size_->il() + 1; 
+	batch_size[1] = size_->Nx() - 2*size_->bs();
         lsizes[2] = batch_size[1];
         //finding the proc which is sending data
-	if(pc_->RANK()%pc_->NX()==1) {
-		rank_sender = pc_->RANK() - numProcxBox; 
-		}
-	else {rank_sender = pc_->RANK() - 2*numProcxBox;}
+	//if(pc_->RANK()%pc_->NX()==1) {
+	//	rank_sender = pc_->RANK() - numProcxBox; 
+	//	}
+	//else {rank_sender = pc_->RANK() - 2*numProcxBox;}
+        rank_sender = pc_->RANK() - (pc_->RANK()%pc_->NX()) *numProcxBox;
         size_recv = lsizes[2]*lsizes[0]*lsizes[1];
 	//memory layout to receive data for beginning of the proc
         start_indices_l[2]=size_->bs();
@@ -1194,22 +1204,22 @@ void grid::CopyBox(){
   }
   if(sender){
        //find the size of sending data to be beginning ofthe middle processor
-       batch_size[0] = size_->Nx() -2*size_->bs() -  N2PI; 
-       batch_size[1] = N2PI - batch_size[0];
+       batch_size[0] = size_->Nx() -2*size_->bs(); 
+       //batch_size[1] = N2PI;
        //memory layout for sending data for the beinning of the middle proc
-       lsizes[2]=batch_size[1];
-       start_indices_l[2]=size_->bs() + batch_size[0];
+       lsizes[2]=batch_size[0];
+       start_indices_l[2]=size_->bs();
        MPI_Type_create_subarray(3,memsizes,lsizes,start_indices_l,MPI_ORDER_C,MPI_DOUBLE,&midmem);
        MPI_Type_commit(&midmem);
        //std::cout << "my rank in sending   pool: "<< pc_->RANK() << " starting:" << start_indices_l[2] << " data size: "<< lsizes[2] << std::endl;
        //find the size of sending data to the beginning of the far right processor in x direction 
-       batch_size[0] = -2*(size_->Nx()-2*size_->bs()) + 3*N2PI;
-       batch_size[1] = (size_->Nx()-2*size_->bs())-batch_size[0];
+       //batch_size[0] = N2PI;
+       //batch_size[1] = (size_->Nx()-2*size_->bs())-batch_size[0];
        //memory layout of sending data to the beginning of the far right in x direction 
-       lsizes[2] = batch_size[0];
-       start_indices_l[2] = size_->bs() + N2PI - batch_size[0];
-       MPI_Type_create_subarray(3,memsizes,lsizes,start_indices_l,MPI_ORDER_C,MPI_DOUBLE,&lastmem);
-       MPI_Type_commit(&lastmem);
+       //lsizes[2] = batch_size[0];
+       //start_indices_l[2] = size_->bs() + N2PI - batch_size[0];
+       //MPI_Type_create_subarray(3,memsizes,lsizes,start_indices_l,MPI_ORDER_C,MPI_DOUBLE,&lastmem);
+       //MPI_Type_commit(&lastmem);
        //std::cout << " my_Nx: "<<  size_->Nx() -2*size_->bs() << std::endl;
        //std::cout << "my rank in sending   pool: "<< pc_->RANK() << " starting:" << start_indices_l[2] << " data size: "<< lsizes[2] << std::endl; 
   }
@@ -1220,22 +1230,14 @@ void grid::CopyBox(){
        //sending data to far right processor in x direction 
        MPI_Waitall(1,&request_send[0],&stat_send[0]);     
        rank_receiver = pc_->RANK() +  2*numProcxBox ;
-       MPI_Isend(&RU.x(0,0,0),1,lastmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
-       //copy data within sender processor if size of sender processor is larger than 2PI		
-       if(receiver){
-	       batch_size[0]= size_->Nx()-2*size_->bs() - N2PI;
-	       batch_size[1]= N2PI ;
-	       for (int i(size_->bs()); i<batch_size[0]+size_->bs(); i++)
-		       for (int j(size_->bs()); j<size_->Ny()-size_->bs(); j++)
-			       for (int k(size_->bs()); k<size_->Nz()-size_->bs(); k++){
-						RU.x(i+batch_size[1],j,k) = RU.x(i,j,k);
-						RU.y(i+batch_size[1],j,k) = RU.y(i,j,k);
-						RU.z(i+batch_size[1],j,k) = RU.z(i,j,k);
-				}
-        
+       MPI_Isend(&RU.x(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
+       rank_receiver = pc_->RANK() +  3*numProcxBox ;
+       MPI_Isend(&RU.x(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
+       
+ 
        MPI_Waitall(1,&request_send[0],&stat_send[0]);
  
-  }
+  
  }
 
 if(receiver && !sender){
@@ -1248,8 +1250,14 @@ if(receiver && !sender){
        MPI_Waitall(1,&request_send[0],&stat_send[0]);
      
        rank_receiver = pc_->RANK() +  2*numProcxBox ;
-       MPI_Isend(&RU.y(0,0,0),1,lastmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);		
+       MPI_Isend(&RU.y(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);		
        MPI_Waitall(1,&request_send[0],&stat_send[0]);
+       
+       rank_receiver = pc_->RANK() +  3*numProcxBox ;
+       MPI_Isend(&RU.y(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);		
+       MPI_Waitall(1,&request_send[0],&stat_send[0]);
+
+
    }
 if(receiver && !sender){
         MPI_Irecv(&RU.z(0,0,0),1,recvmem,rank_sender, 0,MPI_COMM_WORLD,&request_recv[0]);			
@@ -1261,94 +1269,229 @@ if(receiver && !sender){
        MPI_Waitall(1,&request_send[0],&stat_send[0]); 
     
        rank_receiver = pc_->RANK() +  2*numProcxBox ;
-       MPI_Isend(&RU.z(0,0,0),1,lastmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);		
+       MPI_Isend(&RU.y(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);		
+       MPI_Waitall(1,&request_send[0],&stat_send[0]);
+       
+       rank_receiver = pc_->RANK() +  3*numProcxBox ;
+       MPI_Isend(&RU.z(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);		
        MPI_Waitall(1,&request_send[0],&stat_send[0]);
   
+
   }
-if(receiver && !sender){
-	//find receiving size for ending section of the processor
-	batch_size[0] = std::min(size_->ih() - (int)(size_->il()/N2PI+ 1 )*(int)(N2PI),
-				 size_->ih() - size_->il()) + 1; 
 
-        batch_size[1] = size_->Nx() - 2*size_->bs() - batch_size[0] ;
-	size_recv = (batch_size[0])*lsizes[0]*lsizes[1];
-        //memory layout for ending section of the processor
-	lsizes[2] = batch_size[0];
-        start_indices_l[2]=size_->bs() + batch_size[1];
-        
-        MPI_Type_free(&recvmem);
-	MPI_Type_create_subarray(3,memsizes,lsizes,start_indices_l,MPI_ORDER_C,MPI_DOUBLE,&recvmem);
-        MPI_Type_commit(&recvmem);
-	//rank_sender = pc_->RANK() - 2*numProcxBox; 
-        //std::cout << "my rank in receiving pool: "<< pc_->RANK() << " starting: " << start_indices_l[2] << " data size: "<< batch_size[0] << std::endl;
-   
-}
-if(receiver && !sender){
-	MPI_Irecv(&RU.x(0,0,0),1,recvmem,rank_sender, 0,MPI_COMM_WORLD,&request_recv[0]);
-        MPI_Waitall(1,&request_recv[0],&stat_recv[0]);  
-}
- if(sender){
-
-       int MidPCNx=(((pc_->I() + 1)<(size_->Nx_tot()%pc_->NX()))?size_->Nx_tot()/pc_->NX()+1:size_->Nx_tot()/pc_->NX());
-       batch_size[0] = size_->Nx()-2*size_->bs() + MidPCNx - 2*(N2PI); 
-       MPI_Type_free(&midmem);
-       //memory layout for ending part of middle processor
-       lsizes[2]=batch_size[0];
-       start_indices_l[2]=size_->bs();
-       MPI_Type_create_subarray(3,memsizes,lsizes,start_indices_l,MPI_ORDER_C,MPI_DOUBLE,&midmem);
-       MPI_Type_commit(&midmem);
-       //std::cout << "my rank in sending   pool: "<< pc_->RANK() << " starting:" << start_indices_l[2] << " data size: "<< lsizes[2] << std::endl;
-   
-       //memory layout for ending part of far right processor in x direction
-       batch_size[0] = N2PI;
-       MPI_Type_free(&lastmem);
-       lsizes[2]=batch_size[0];
-       MPI_Type_create_subarray(3,memsizes,lsizes,start_indices_l,MPI_ORDER_C,MPI_DOUBLE,&lastmem);
-       MPI_Type_commit(&lastmem);
-       //std::cout << "my rank in sending   pool: "<< pc_->RANK() << " starting:" << start_indices_l[2] << " data size: "<< lsizes[2] << std::endl;
-   
- 
-       }
- if(sender){
-       rank_receiver = pc_->RANK() +  numProcxBox; 
-       MPI_Isend(&RU.x(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
-       MPI_Waitall(1,&request_send[0],&stat_send[0]);
-
-       rank_receiver = pc_->RANK() +  2*numProcxBox ;
-       MPI_Isend(&RU.x(0,0,0),1,lastmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
-       MPI_Waitall(1,&request_send[0],&stat_send[0]);
-  }
-if(receiver && !sender){
-       MPI_Irecv(&RU.y(0,0,0),1,recvmem,rank_sender, 0,MPI_COMM_WORLD,&request_recv[0]);
-       MPI_Waitall(1,&request_recv[0],&stat_recv[0]);  
-}
- if(sender){
-      
-       rank_receiver = pc_->RANK() +  numProcxBox; 
-       MPI_Isend(&RU.y(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
-       MPI_Waitall(1,&request_send[0],&stat_send[0]); 
- 
-       rank_receiver = pc_->RANK() +  2*numProcxBox ;
-       MPI_Isend(&RU.y(0,0,0),1,lastmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
-       MPI_Waitall(1,&request_send[0],&stat_send[0]);
-     
-   }
-if(receiver && !sender){
-//if(pc_->RANK() %pc_->NX() == (pc_->NX() -1)){
-        MPI_Irecv(&RU.z(0,0,0),1,recvmem,rank_sender,0 ,MPI_COMM_WORLD,&request_recv[0]);
-	MPI_Waitall(1,&request_recv[0],&stat_recv[0]);  
-}
- if(sender){
-   
-	rank_receiver = pc_->RANK() +  numProcxBox; 
-        MPI_Isend(&RU.z(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
-        MPI_Waitall(1,&request_send[0],&stat_send[0]); 
-       
- 
-       rank_receiver = pc_->RANK() +  2*numProcxBox ;
-       MPI_Isend(&RU.z(0,0,0),1,lastmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);	
-       MPI_Waitall(1,&request_send[0],&stat_send[0]); 
-   }
   RU.Update_Ghosts();
 
 }
+
+
+//void grid::CopyBox(){
+//  //this function is written only for Nx=128, Ny=Nz =64, for 24 proc with layout 3*2*4
+//  //sending data is in x,y,z direction seperately with divinding 2 receiving processor into the beginning and ending portion
+//  //beginning of each processor corresponds to ending part of 2PI-So receiving data is disected not from beginning of 2PI- 
+//  //whereas ending portion of the receiving processors corresponds to beginning part of 2PI
+//  int numProcxBox =(size_->Lx()/size_->Ly() + pc_->NX() - 1)/(size_->Lx()/size_->Ly());
+//  bool sender = (pc_->I()< numProcxBox)?true:false;
+//  bool receiver = (pc_->I() < pc_->NX()/(size_->Lx()/size_->Lz()))?false:true;
+//  MPI_Request request_send[2];
+//  MPI_Request request_recv[1];
+//  MPI_Status stat_send[2];
+//  MPI_Status stat_recv[1];
+//  int batch_size[2];
+//  int b_offset = size_->bs();
+//  MPI_Datatype midmem,lastmem,recvmem;
+//  int start_indices_l[3];
+//  int lsizes[3];
+//  int memsizes[3];
+//  int rank_sender;
+//  int rank_receiver;
+//  int size_recv;
+//  int N2PI = size_->Lz()/size_->dx();
+//  lsizes[0]=size_->Nz()-2*size_->bs();  lsizes[1]=size_->Ny()-2*size_->bs(); 
+//  memsizes[0]=size_->Nz();  memsizes[1]=size_->Ny();  memsizes[2]=size_->Nx();
+//  start_indices_l[0]=size_->bs();  start_indices_l[1]=size_->bs(); 
+//  
+//
+//  if(receiver && !sender){
+//        //finding size of receiving data
+//  	batch_size[0] = std::min(size_->ih() - (int)(size_->il()/N2PI+ 1 )*(int)(N2PI),
+//				 size_->ih() - size_->il()) + 1; 
+//	batch_size[1] = size_->Nx() - 2*size_->bs()  - batch_size[0];
+//        lsizes[2] = batch_size[1];
+//        //finding the proc which is sending data
+//	if(pc_->RANK()%pc_->NX()==1) {
+//		rank_sender = pc_->RANK() - numProcxBox; 
+//		}
+//	else {rank_sender = pc_->RANK() - 2*numProcxBox;}
+//        size_recv = lsizes[2]*lsizes[0]*lsizes[1];
+//	//memory layout to receive data for beginning of the proc
+//        start_indices_l[2]=size_->bs();
+//	MPI_Type_create_subarray(3,memsizes,lsizes,start_indices_l,MPI_ORDER_C,MPI_DOUBLE,&recvmem);
+//	MPI_Type_commit(&recvmem);
+//        //std::cout <<"my size: " << size_->Nx() - 2*size_->bs() << std::endl;	
+//        
+//        //std::cout << "my rank in receiving pool: "<< pc_->RANK() << " starting:  " << start_indices_l[2] << " data size:" << lsizes[2] << std::endl;
+//  }
+//  if(receiver && !sender){
+//	MPI_Irecv(&RU.x(0,0,0),1,recvmem,rank_sender, 0,MPI_COMM_WORLD,&request_recv[0]);			
+//        MPI_Waitall(1,&request_recv[0],&stat_recv[0]);  
+//  }
+//  if(sender){
+//       //find the size of sending data to be beginning ofthe middle processor
+//       batch_size[0] = size_->Nx() -2*size_->bs() -  N2PI; 
+//       batch_size[1] = N2PI - batch_size[0];
+//       //memory layout for sending data for the beinning of the middle proc
+//       lsizes[2]=batch_size[1];
+//       start_indices_l[2]=size_->bs() + batch_size[0];
+//       MPI_Type_create_subarray(3,memsizes,lsizes,start_indices_l,MPI_ORDER_C,MPI_DOUBLE,&midmem);
+//       MPI_Type_commit(&midmem);
+//       //std::cout << "my rank in sending   pool: "<< pc_->RANK() << " starting:" << start_indices_l[2] << " data size: "<< lsizes[2] << std::endl;
+//       //find the size of sending data to the beginning of the far right processor in x direction 
+//       batch_size[0] = -2*(size_->Nx()-2*size_->bs()) + 3*N2PI;
+//       batch_size[1] = (size_->Nx()-2*size_->bs())-batch_size[0];
+//       //memory layout of sending data to the beginning of the far right in x direction 
+//       lsizes[2] = batch_size[0];
+//       start_indices_l[2] = size_->bs() + N2PI - batch_size[0];
+//       MPI_Type_create_subarray(3,memsizes,lsizes,start_indices_l,MPI_ORDER_C,MPI_DOUBLE,&lastmem);
+//       MPI_Type_commit(&lastmem);
+//       //std::cout << " my_Nx: "<<  size_->Nx() -2*size_->bs() << std::endl;
+//       //std::cout << "my rank in sending   pool: "<< pc_->RANK() << " starting:" << start_indices_l[2] << " data size: "<< lsizes[2] << std::endl; 
+//  }
+// if(sender){
+//       //sending data to middle processor
+//       rank_receiver = pc_->RANK() +  numProcxBox;
+//       MPI_Isend(&RU.x(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
+//       //sending data to far right processor in x direction 
+//       MPI_Waitall(1,&request_send[0],&stat_send[0]);     
+//       rank_receiver = pc_->RANK() +  2*numProcxBox ;
+//       MPI_Isend(&RU.x(0,0,0),1,lastmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
+//       //copy data within sender processor if size of sender processor is larger than 2PI		
+//       if(receiver){
+//	       batch_size[0]= size_->Nx()-2*size_->bs() - N2PI;
+//	       batch_size[1]= N2PI ;
+//	       for (int i(size_->bs()); i<batch_size[0]+size_->bs(); i++)
+//		       for (int j(size_->bs()); j<size_->Ny()-size_->bs(); j++)
+//			       for (int k(size_->bs()); k<size_->Nz()-size_->bs(); k++){
+//						RU.x(i+batch_size[1],j,k) = RU.x(i,j,k);
+//						RU.y(i+batch_size[1],j,k) = RU.y(i,j,k);
+//						RU.z(i+batch_size[1],j,k) = RU.z(i,j,k);
+//				}
+//        
+//       MPI_Waitall(1,&request_send[0],&stat_send[0]);
+// 
+//  }
+// }
+//
+//if(receiver && !sender){
+//        MPI_Irecv(&RU.y(0,0,0),1,recvmem,rank_sender, 0,MPI_COMM_WORLD,&request_recv[0]);			
+//        MPI_Waitall(1,&request_recv[0],&stat_recv[0]);  
+//}
+// if(sender){
+//       rank_receiver = pc_->RANK() +  numProcxBox; 
+//       MPI_Isend(&RU.y(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
+//       MPI_Waitall(1,&request_send[0],&stat_send[0]);
+//     
+//       rank_receiver = pc_->RANK() +  2*numProcxBox ;
+//       MPI_Isend(&RU.y(0,0,0),1,lastmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);		
+//       MPI_Waitall(1,&request_send[0],&stat_send[0]);
+//   }
+//if(receiver && !sender){
+//        MPI_Irecv(&RU.z(0,0,0),1,recvmem,rank_sender, 0,MPI_COMM_WORLD,&request_recv[0]);			
+//        MPI_Waitall(1,&request_recv[0],&stat_recv[0]);  
+//}
+// if(sender){
+//       rank_receiver = pc_->RANK() +  numProcxBox; 
+//       MPI_Isend(&RU.z(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
+//       MPI_Waitall(1,&request_send[0],&stat_send[0]); 
+//    
+//       rank_receiver = pc_->RANK() +  2*numProcxBox ;
+//       MPI_Isend(&RU.z(0,0,0),1,lastmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);		
+//       MPI_Waitall(1,&request_send[0],&stat_send[0]);
+//  
+//  }
+//if(receiver && !sender){
+//	//find receiving size for ending section of the processor
+//	batch_size[0] = std::min(size_->ih() - (int)(size_->il()/N2PI+ 1 )*(int)(N2PI),
+//				 size_->ih() - size_->il()) + 1; 
+//
+//        batch_size[1] = size_->Nx() - 2*size_->bs() - batch_size[0] ;
+//	size_recv = (batch_size[0])*lsizes[0]*lsizes[1];
+//        //memory layout for ending section of the processor
+//	lsizes[2] = batch_size[0];
+//        start_indices_l[2]=size_->bs() + batch_size[1];
+//        
+//        MPI_Type_free(&recvmem);
+//	MPI_Type_create_subarray(3,memsizes,lsizes,start_indices_l,MPI_ORDER_C,MPI_DOUBLE,&recvmem);
+//        MPI_Type_commit(&recvmem);
+//	//rank_sender = pc_->RANK() - 2*numProcxBox; 
+//        //std::cout << "my rank in receiving pool: "<< pc_->RANK() << " starting: " << start_indices_l[2] << " data size: "<< batch_size[0] << std::endl;
+//   
+//}
+//if(receiver && !sender){
+//	MPI_Irecv(&RU.x(0,0,0),1,recvmem,rank_sender, 0,MPI_COMM_WORLD,&request_recv[0]);
+//        MPI_Waitall(1,&request_recv[0],&stat_recv[0]);  
+//}
+// if(sender){
+//
+//       int MidPCNx=(((pc_->I() + 1)<(size_->Nx_tot()%pc_->NX()))?size_->Nx_tot()/pc_->NX()+1:size_->Nx_tot()/pc_->NX());
+//       batch_size[0] = size_->Nx()-2*size_->bs() + MidPCNx - 2*(N2PI); 
+//       MPI_Type_free(&midmem);
+//       //memory layout for ending part of middle processor
+//       lsizes[2]=batch_size[0];
+//       start_indices_l[2]=size_->bs();
+//       MPI_Type_create_subarray(3,memsizes,lsizes,start_indices_l,MPI_ORDER_C,MPI_DOUBLE,&midmem);
+//       MPI_Type_commit(&midmem);
+//       //std::cout << "my rank in sending   pool: "<< pc_->RANK() << " starting:" << start_indices_l[2] << " data size: "<< lsizes[2] << std::endl;
+//   
+//       //memory layout for ending part of far right processor in x direction
+//       batch_size[0] = N2PI;
+//       MPI_Type_free(&lastmem);
+//       lsizes[2]=batch_size[0];
+//       MPI_Type_create_subarray(3,memsizes,lsizes,start_indices_l,MPI_ORDER_C,MPI_DOUBLE,&lastmem);
+//       MPI_Type_commit(&lastmem);
+//       //std::cout << "my rank in sending   pool: "<< pc_->RANK() << " starting:" << start_indices_l[2] << " data size: "<< lsizes[2] << std::endl;
+//   
+// 
+//       }
+// if(sender){
+//       rank_receiver = pc_->RANK() +  numProcxBox; 
+//       MPI_Isend(&RU.x(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
+//       MPI_Waitall(1,&request_send[0],&stat_send[0]);
+//
+//       rank_receiver = pc_->RANK() +  2*numProcxBox ;
+//       MPI_Isend(&RU.x(0,0,0),1,lastmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
+//       MPI_Waitall(1,&request_send[0],&stat_send[0]);
+//  }
+//if(receiver && !sender){
+//       MPI_Irecv(&RU.y(0,0,0),1,recvmem,rank_sender, 0,MPI_COMM_WORLD,&request_recv[0]);
+//       MPI_Waitall(1,&request_recv[0],&stat_recv[0]);  
+//}
+// if(sender){
+//      
+//       rank_receiver = pc_->RANK() +  numProcxBox; 
+//       MPI_Isend(&RU.y(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
+//       MPI_Waitall(1,&request_send[0],&stat_send[0]); 
+// 
+//       rank_receiver = pc_->RANK() +  2*numProcxBox ;
+//       MPI_Isend(&RU.y(0,0,0),1,lastmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
+//       MPI_Waitall(1,&request_send[0],&stat_send[0]);
+//     
+//   }
+//if(receiver && !sender){
+////if(pc_->RANK() %pc_->NX() == (pc_->NX() -1)){
+//        MPI_Irecv(&RU.z(0,0,0),1,recvmem,rank_sender,0 ,MPI_COMM_WORLD,&request_recv[0]);
+//	MPI_Waitall(1,&request_recv[0],&stat_recv[0]);  
+//}
+// if(sender){
+//   
+//	rank_receiver = pc_->RANK() +  numProcxBox; 
+//        MPI_Isend(&RU.z(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
+//        MPI_Waitall(1,&request_send[0],&stat_send[0]); 
+//       
+// 
+//       rank_receiver = pc_->RANK() +  2*numProcxBox ;
+//       MPI_Isend(&RU.z(0,0,0),1,lastmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);	
+//       MPI_Waitall(1,&request_send[0],&stat_send[0]); 
+//   }
+//  RU.Update_Ghosts();
+//
+//}
