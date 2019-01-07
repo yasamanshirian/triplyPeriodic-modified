@@ -674,7 +674,9 @@ void grid::Update_RV_WOQ()
   //RHS_RV.PlusEqual_Mult(param_->A(),RU_int);
   if(!param_->S2_type()){
 	grid::V_Source(T_cur);
-	S2 -= S2.mean();
+	S2.x -= S2.x.mean();
+	S2.y -= S2.y.mean();
+	S2.z -= S2.z.mean();
 	RHS_RV+=S2;
   }
   else{
