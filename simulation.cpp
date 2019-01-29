@@ -61,7 +61,7 @@ int main (int argc,char *argv[] )
 	{
 	  GRID.Update_Rho();
 	  GRID.Update_P0();
-	  GRID.Update_Particle();
+	  //GRID.Update_Particle();
 	  if (PARAM.solve_for_scalar())GRID.Update_Passive_Scalar();
           if (PARAM.solve_for_vector()){
  	  	GRID.Update_RV_WOQ();
@@ -94,14 +94,14 @@ int main (int argc,char *argv[] )
   //MPI_Finalize();
  
   auto stop = high_resolution_clock::now();
-  double duration = duration_cast<microseconds>(stop-start).count();
-  double longest_duration=0; 
+  double duration = duration_cast<seconds>(stop-start).count();
+  double longest_duration; 
   MPI_Reduce(&duration,&longest_duration,1, MPI_DOUBLE, MPI_MAX,0,MPI_COMM_WORLD);
  
  
   if (PROC.IsRoot()) {
-	std::cout << "run time: " << longest_duration*10e-6 
-        	<< " average time per RK4 step : " << longest_duration*10e-6/(PARAM.T_final()/PARAM.dt()) << std::endl; 
+	std::cout << "run time: " << longest_duration 
+        	<< " average time per RK4 step : " << longest_duration/(PARAM.T_final()/PARAM.dt()) << std::endl; 
   }
   MPI_Finalize();
   
