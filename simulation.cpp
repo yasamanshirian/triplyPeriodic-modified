@@ -93,12 +93,13 @@ int main (int argc,char *argv[] )
   
   
   auto stop = high_resolution_clock::now();
-  auto duration = duration_cast<microseconds>(stop-start).count();
-  double longest_duration=0;
+  auto d = duration_cast<seconds>(stop-start);
+  double duration =  d.count();
+  double longest_duration;
   MPI_Reduce(&duration,&longest_duration,1,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD);
   if (PROC.IsRoot()) {
-  	std::cout << "run time: " << longest_duration*10e-6 << 
-        " average time per RK4 step : " << longest_duration*10e-6/(PARAM.T_final()/PARAM.dt()) << std::endl;
+  	std::cout << "run time: " << longest_duration << 
+        " average time per RK4 step : " << longest_duration/(PARAM.T_final()/PARAM.dt()) << std::endl;
   }
   MPI_Finalize();
   }
