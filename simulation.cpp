@@ -1,6 +1,7 @@
 #include <iostream>
 #include <mpi.h>
 #include <cmath>
+#include <chrono>
 #include "params.h"
 #include "proc.h"
 #include "gridsize.h"
@@ -9,6 +10,9 @@
 #include "communicator.h"
 #include "poisson.h"
 #include "grid.h"
+
+using namespace std::chrono;
+
 int main (int argc,char *argv[] ) 
 {
   if (argc != 2) 
@@ -47,6 +51,7 @@ int main (int argc,char *argv[] )
   communicator COMM(&GSIZE,&PARAM,&PROC);
   grid GRID(&GSIZE,&PARAM,&PROC,&COMM);
   GRID.Initialize();
+  auto start = high_resolution_clock::now();
   // Time integration loop
   do {
       PARAM.update(GRID.T_cur);
@@ -85,7 +90,11 @@ int main (int argc,char *argv[] )
       GRID.TimeAdvance();
       GRID.Statistics();
   }while ((GRID.T_cur<PARAM.T_final())&&(!GRID.Touch()));
- 
+
+  auto stop = high_resolution_clock::now();
+  auto duration = duration_cast<microseconds>(stop-start);
+  std::cout << "run time: " << duration.count() 
+        << " average time per RK4 step : " << duration.count()*PARAM.T_final()/PARAM.dt() << std::endl; 
   MPI_Finalize();
   
 }
