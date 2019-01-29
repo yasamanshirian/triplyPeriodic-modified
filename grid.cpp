@@ -943,7 +943,7 @@ void grid::Statistics()
   stat_Tp<<T_cur<<" "<<Tp_mean<<std::endl;
   stat_HT<<T_cur<<" "<<HT_mean<<std::endl;
   stat_TKE2<<T_cur<<" "<<TKE2<<std::endl;
-  stat_TKE<<T_cur<<" "<<TKE<<std::endl;
+  //stat_TKE<<T_cur<<" "<<TKE<<std::endl;
   stat_TKE_U<<T_cur<<" "<<TKE_U<<std::endl;
   stat_TKE_V<<T_cur<<" "<<TKE_V<<std::endl;
   stat_TKE_W<<T_cur<<" "<<TKE_W<<std::endl;

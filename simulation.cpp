@@ -101,7 +101,7 @@ int main (int argc,char *argv[] )
  
   if (PROC.IsRoot()) {
 	std::cout << "run time: " << longest_duration*10e-6 
-        	<< " average time per RK4 step : " << longest_duration*10e-6/PARAM.T_final()/PARAM.dt() << std::endl; 
+        	<< " average time per RK4 step : " << longest_duration*10e-6/(PARAM.T_final()/PARAM.dt()) << std::endl; 
   }
   MPI_Finalize();
   
