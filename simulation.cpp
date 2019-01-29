@@ -20,6 +20,7 @@ int main (int argc,char *argv[] )
       std::cout << "Please supply a parameter file!" << std::endl;
       exit(1);
     }
+  //auto start = high_resolution_clock::now(); 
   MPI_Init(&argc, &argv);
   // Define required objects
   params PARAM(argv[1]);
@@ -90,11 +91,19 @@ int main (int argc,char *argv[] )
       GRID.TimeAdvance();
       GRID.Statistics();
   }while ((GRID.T_cur<PARAM.T_final())&&(!GRID.Touch()));
-  MPI_Finalize();
+  //MPI_Finalize();
  
   auto stop = high_resolution_clock::now();
-  auto duration = duration_cast<microseconds>(stop-start);
-  std::cout << "run time: " << duration.count() 
-        << " average time per RK4 step : " << duration.count()*PARAM.T_final()/PARAM.dt() << std::endl; 
+  double duration = duration_cast<microseconds>(stop-start).count();
+  double longest_duration=0; 
+  MPI_Reduce(&duration,&longest_duration,1, MPI_DOUBLE, MPI_MAX,0,MPI_COMM_WORLD);
+ 
+ 
+  if (PROC.IsRoot()) {
+	std::cout << "run time: " << longest_duration*10e-6 
+        	<< " average time per RK4 step : " << longest_duration*10e-6/PARAM.T_final()/PARAM.dt() << std::endl; 
+  }
+  MPI_Finalize();
+  
   }
   
