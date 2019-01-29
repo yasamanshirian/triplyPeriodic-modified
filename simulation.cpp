@@ -53,9 +53,9 @@ int main (int argc,char *argv[] )
       // RK4 loop
       for (GRID.RK4_count=0;GRID.RK4_count<4;GRID.RK4_count++)
 	{
-	  GRID.Update_Rho();
-	  GRID.Update_P0();
-	  GRID.Update_Particle();
+	  //GRID.Update_Rho();
+	  //GRID.Update_P0();
+	  //GRID.Update_Particle();
 	  if (PARAM.solve_for_scalar())GRID.Update_Passive_Scalar();
           if (PARAM.solve_for_vector()){
  	  	GRID.Update_RV_WOQ();
@@ -64,7 +64,7 @@ int main (int argc,char *argv[] )
 	  	GRID.Update_RV_WQ();
           }
           GRID.Update_RU_WOP();
-	  GRID.Compute_Div_U_new();
+	  //GRID.Compute_Div_U_new();
 	  GRID.Compute_RHS_Pois();
 	  GRID.Solve_Poisson();
 	  GRID.Update_RU_WP();

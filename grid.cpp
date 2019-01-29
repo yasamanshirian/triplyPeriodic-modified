@@ -9,7 +9,7 @@
 #include "grid.h"
 #include "scalar_source.h"
 #include "vector_source.h"
-grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),RV(s,com),RV_int(s,com),RV_new(s,com),RV_np1(s,com),Passive_Scalar_int(s,com),Passive_Scalar_new(s,com),Passive_Scalar_np1(s,com),Passive_Scalar_face(s,com),Passive_Scalar(s,com),RHS_Passive_Scalar(s,com), S1(s,com), S2(s,com), RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),RV_WQ(s,com),RHS_RV(s,com),V(s,com),Q(s,com),RHS_Pois_Q(s,com),Rho(s,com),Rho_int(s,com),Rho_new(s,com),Rho_np1(s,com),RHS_Rho(s,com),Rho_face(s,com),C(s,com), T(s,com),dummy(s,com),dummy2(s,com),divergence(s,com),RHS_Part_Temp(s,com),PS_(p,pc,s,com),part(p,pc,s)
+grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),RV(s,com),RV_int(s,com),RV_new(s,com),RV_np1(s,com),Passive_Scalar_int(s,com),Passive_Scalar_new(s,com),Passive_Scalar_np1(s,com),Passive_Scalar_face(s,com),Passive_Scalar(s,com),RHS_Passive_Scalar(s,com), S1(s,com), S2(s,com), RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),RV_WQ(s,com),RHS_RV(s,com),V(s,com),Q(s,com),RHS_Pois_Q(s,com),C(s,com), T(s,com),dummy(s,com),dummy2(s,com),divergence(s,com),RHS_Part_Temp(s,com),PS_(p,pc,s,com),part(p,pc,s)
 {
   size_=s;
   param_=p;
@@ -47,9 +47,9 @@ grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s
 	  open_stat_file("C_Max",stat_CMax);
 	  open_stat_file("C_Min",stat_CMin);
 	  open_stat_file("C_Mean",stat_CMean);
-	  open_stat_file("Rho_Max",stat_RhoMax);
-	  open_stat_file("Rho_Min",stat_RhoMin);
-	  open_stat_file("Rho_Mean",stat_RhoMean);
+	  //open_stat_file("Rho_Max",stat_RhoMax);
+	  //open_stat_file("Rho_Min",stat_RhoMin);
+	  //open_stat_file("Rho_Mean",stat_RhoMean);
 	  open_stat_file("Max_CFL_Vp",stat_ParticleMaxCFL);
 	  open_stat_file("Max_CFL_U",stat_GasMaxCFL);
 	  open_stat_file("Num_Iteration",stat_NumIteration);
@@ -79,9 +79,9 @@ grid::~grid()
 	  stat_CMax.close();
 	  stat_CMin.close();
 	  stat_CMean.close();
-	  stat_RhoMax.close();
-	  stat_RhoMin.close();
-	  stat_RhoMean.close();
+	  //stat_RhoMax.close();
+	  //stat_RhoMin.close();
+	  //stat_RhoMean.close();
 	  stat_ParticleMaxCFL.close();
 	  stat_GasMaxCFL.close();
 	  stat_GasMaxDiffCFL.close();
@@ -215,7 +215,7 @@ void grid::Initialize()
       P0=param_->P0();
       T_cur=0;
       num_timestep=0;
-      Rho_face.Equal_I_C2F(Rho);
+      //Rho_face.Equal_I_C2F(Rho);
     }
   
   if (param_->Initial()==1)
@@ -464,24 +464,24 @@ void grid::Initialize()
   RV_np1=RV;
   Passive_Scalar_int = Passive_Scalar;
   Passive_Scalar_np1 = Passive_Scalar;
-  Rho_int=Rho;
-  Rho_np1=Rho;
+  //Rho_int=Rho;
+  //Rho_np1=Rho;
   //Q0_int = Q0;
   //Q0_np1 = Q0;
   P0_int=P0;
   P0_np1=P0;
   //Need to compute rho at faces once here, after this, Compute_RHS_Pois computes it
-  Rho_face.Equal_I_C2F(Rho);
+  //Rho_face.Equal_I_C2F(Rho);
   //Need to compute Passive_Scalar at faces once here, after this, Update_Passive_Scalar computes it
   Passive_Scalar_face.Equal_I_C2F(Passive_Scalar);
   //particle part
-  part.x_int=part.x; part.y_int=part.y; part.z_int=part.z; part.u_int=part.u; part.v_int=part.v; part.w_int=part.w; part.T_int=part.T;
+  /*part.x_int=part.x; part.y_int=part.y; part.z_int=part.z; part.u_int=part.u; part.v_int=part.v; part.w_int=part.w; part.T_int=part.T;
   part.x_np1=part.x; part.y_np1=part.y; part.z_np1=part.z; part.u_np1=part.u; part.v_np1=part.v; part.w_np1=part.w; part.T_np1=part.T;
   //Need to compute RHS of particle energy equation before enetering RK4 loop
   T.Equal_Divide(P0_int / param_->R(),Rho_int);
   part.gas2part_Temp_int(T);
   part.Compute_RHS_Temp_int();
-  part.part2gas_Temp_int(RHS_Part_Temp);
+  part.part2gas_Temp_int(RHS_Part_Temp);*/
   
   Write_info();
 }
@@ -578,11 +578,11 @@ void grid::Store()
       filename=filename_out_Data.str();
       com_->write(Q,(char*)(filename.c_str()));
       
-      filename_out_Data.str("");
-      filename_out_Data.clear();
-      filename_out_Data<<param_->data_dir()<<"Rho"<<"_"<<num_timestep<<".bin";
-      filename=filename_out_Data.str();
-      com_->write(Rho,(char*)(filename.c_str()));
+      //filename_out_Data.str("");
+      //filename_out_Data.clear();
+      //filename_out_Data<<param_->data_dir()<<"Rho"<<"_"<<num_timestep<<".bin";
+      //filename=filename_out_Data.str();
+      //com_->write(Rho,(char*)(filename.c_str()));
       
       //filename_out_Data.str("");
       //filename_out_Data.clear();
@@ -594,7 +594,7 @@ void grid::Store()
 
 void grid::TimeAdvance()
 {
-  Rho=Rho_np1;
+  //Rho=Rho_np1;
   Passive_Scalar = Passive_Scalar_np1;
   RU=RU_np1;
   RV=RV_np1;
@@ -680,7 +680,8 @@ void grid::Update_RV_WOQ()
 	RHS_RV+=S2;
   }
   else{
-      dummy.x.Equal_Divide(RU_int.x,Rho_face.x); //comupte u_int at faces (note: Rho_face is already computed from previous sub-step @ Compute_RHS_Pois)
+      //dummy.x.Equal_Divide(RU_int.x,Rho_face.x); //comupte u_int at faces (note: Rho_face is already computed from previous sub-step @ Compute_RHS_Pois)
+      dummy.x.Equal_Divide(RU_int,Rho);
       dummy.x.Equal_Iy_C2F(dummy.x);
       RHS_RV.y.PlusEqual_Mult(-1,dummy.x);	
 	
@@ -742,13 +743,12 @@ void grid::C_Source(double T)
 
 void grid::Update_Passive_Scalar()
 {
-    //U.Equal_Divide(RU_new,Rho_face); //Compute U_new at cell faces and store it in U
-    U.Equal_Divide(RU_int,Rho_face); //Compute U_new at cell faces and store it in U
-    //std::cout<<"before UC" <<std::endl;
+    
+    
+    //U.Equal_Divide(RU_int,Rho_face); //Compute U_new at cell faces and store it in U
+    U.Equal_Divide(RU_int,Rho);
     dummy.Equal_Mult(U,Passive_Scalar_face);//computing u_int at faces, note: we have already computed Passive_Scalar_face in previous RK4 substep
-    //std::cout<<"after UC" <<std::endl;
     dummy2.x.Equal_Div_F2C(dummy);
-    //std::cout<<"before Del2" <<std::endl;
     dummy2.y.Equal_Del2(Passive_Scalar_int);//div(grad(C))
     //std::cout<<"before source" <<std::endl;
     grid::C_Source(T_cur);
@@ -802,11 +802,15 @@ void grid::Update_RU_WOP()
   //Add artificial force
   RHS_RU.PlusEqual_Mult(param_->A(),RU_int);
   //Add body force
-  Rho_face -= param_->Rho0(); //make density zero mean! (be careful if you want to reuse it later somewhere else!)
-  dummy.x.Equal_Mult(Rho_face.x,param_->gx());
-  dummy.y.Equal_Mult(Rho_face.y,param_->gy());
-  dummy.z.Equal_Mult(Rho_face.z,param_->gz());
-  RHS_RU += dummy;
+  //Rho_face -= param_->Rho0(); //make density zero mean! (be careful if you want to reuse it later somewhere else!)
+  //dummy.x.Equal_Mult(Rho_face.x,param_->gx());
+  //dummy.y.Equal_Mult(Rho_face.y,param_->gy());
+  //dummy.z.Equal_Mult(Rho_face.z,param_->gz());
+  dummy.x.Equal_Mult(Rho,param_->gx());
+  dummy.y.Equal_Mult(Rho,param_->gy());
+  dummy.z.Equal_Mult(Rho,param_->gz());
+ 
+   RHS_RU += dummy;
     
   RU_np1.PlusEqual_Mult(param_->dt()*RK4_postCoeff[RK4_count],RHS_RU); //Update RU_np1
   if (RK4_count!=3) RU_new.Equal_LinComb(1,RU,param_->dt()*RK4_preCoeff[RK4_count],RHS_RU); //update RU_new
@@ -840,17 +844,19 @@ void grid::Compute_Div_U_new()
 
 void grid::Compute_RHS_Pois()
 {
-  Rho_face.Equal_I_C2F(Rho_new); //Interpolate Rho_new to the faces of cell. Note: we reuse this at next RK4 step at Update_RU_WOP() 
-  U.Equal_Divide(RU_new,Rho_face); //Compute U_new at cell faces and store it in U
+  //Rho_face.Equal_I_C2F(Rho_new); //Interpolate Rho_new to the faces of cell. Note: we reuse this at next RK4 step at Update_RU_WOP() 
+  //U.Equal_Divide(RU_new,Rho_face); //Compute U_new at cell faces and store it in U
+  U.Equal_Divide(RU_new,Rho); //Compute U_new at cell faces and store it in U
   RHS_Pois.Equal_Div_F2C(U); //Compute div(u_new_wop) and store it in RHS_Pois
-  RHS_Pois -= divergence;
+  //RHS_Pois -= divergence;
   RHS_Pois *= (1./(param_->dt()*RK4_preCoeff[RK4_count]));
   RHS_Pois.make_mean_zero(); //make RHS_Pois zero mean (theoritically we do not need this if dP0/dt term is included, but not computationally!)
 }
 
 void grid::Solve_Poisson()
 {
-  dummy.Equal_Divide(1.,Rho_face); //compute coefficients
+  //dummy.Equal_Divide(1.,Rho_face); //compute coefficients
+  dummy.Equal_Divide(1.,Rho); //compute coefficients
   PS_.Solve(dummy,P,RHS_Pois);
 }
 
@@ -889,7 +895,7 @@ void grid::Update_Particle()
 
 void grid::TimeAdvance_RK4()
 {
-  Rho_int=Rho_new;
+  //Rho_int=Rho_new;
   RU_int=RU_new;
   RV_int=RV_new;
   P0_int=P0_new;
@@ -902,9 +908,9 @@ void grid::TimeAdvance_RK4()
 void grid::Statistics()
 {
   if (!param_->Statistics()) return;
-  double Rho_mean=Rho.mean();
-  double Rho_max=Rho.max();
-  double Rho_min=Rho.min();
+  //double Rho_mean=Rho.mean();
+  //double Rho_max=Rho.max();
+  //double Rho_min=Rho.min();
   double C_max=C.max();
   double C_min=C.min();
   double C_mean=C.mean();
@@ -914,7 +920,8 @@ void grid::Statistics()
   double Particle_CFL_Max=0;
   double TKE,TKE_U,TKE_V,TKE_W;
   double TKEV,TKEV_V1,TKEV_V2,TKEV_V3;
-  U.Equal_Divide(RU_np1,Rho_face);
+  //U.Equal_Divide(RU_np1,Rho_face);
+  U.Equal_Divide(RU_np1,Rho);
   V.Equal_Divide(RV_np1,Rho_forV);
   double Gas_CFL_Max=U.max_cfl(param_->dt());
   double u_max=U.max();
@@ -931,7 +938,8 @@ void grid::Statistics()
   TKEV_V2=V.y.mean();
   TKEV_V3=V.z.mean();
   TKEV=TKEV_V1+TKEV_V2+TKEV_V3;
-  double Gas_Max_Diff_CFL = param_->dt() / ( size_->dx() * size_->dx() * Rho_min / param_->Mu0()) * 6.; //when dx=dy=dz
+  //double Gas_Max_Diff_CFL = param_->dt() / ( size_->dx() * size_->dx() * Rho_min / param_->Mu0()) * 6.; //when dx=dy=dz
+  double Gas_Max_Diff_CFL = param_->dt() / ( size_->dx() * size_->dx() * Rho / param_->Mu0()) * 6.; //when dx=dy=dz
   double Load_Balance=part.Balance_Index();
   part.trajectory(T_cur); //store particle trajectory
   double Tp_mean = part.mean(part.T);
@@ -957,9 +965,9 @@ void grid::Statistics()
   stat_CMax<<T_cur<<" "<<C_max<<std::endl;
   stat_CMin<<T_cur<<" "<<C_min<<std::endl;
   stat_CMean<<T_cur<<" "<<C_mean<<std::endl;
-  stat_RhoMax<<T_cur<<" "<<Rho_max<<std::endl;
-  stat_RhoMin<<T_cur<<" "<<Rho_min<<std::endl;
-  stat_RhoMean<<T_cur<<" "<<Rho_mean<<std::endl;
+  //stat_RhoMax<<T_cur<<" "<<Rho_max<<std::endl;
+  //stat_RhoMin<<T_cur<<" "<<Rho_min<<std::endl;
+  //stat_RhoMean<<T_cur<<" "<<Rho_mean<<std::endl;
   stat_ParticleMaxCFL<<T_cur<<" "<<Particle_CFL_Max<<std::endl;    
   stat_GasMaxCFL<<T_cur<<" "<<Gas_CFL_Max<<std::endl;    
   stat_GasMaxDiffCFL<<T_cur<<" "<<Gas_Max_Diff_CFL<<std::endl;
@@ -967,7 +975,7 @@ void grid::Statistics()
   stat_BalanceIndex<<T_cur<<" "<<Load_Balance<<std::endl;
   if (!param_->Stat_print()) return;
   std::cout<<std::endl<<"::::::::::TIME="<<T_cur<<"::::::::::STEP="<<num_timestep<<"::::::::::"<<std::endl;
-  std::cout<<"*** Rho_min="<<Rho_min<<"  ,  Rho_max="<<Rho_max<<"  ,  Rho_mean="<<Rho_mean<<std::endl;
+  //std::cout<<"*** Rho_min="<<Rho_min<<"  ,  Rho_max="<<Rho_max<<"  ,  Rho_mean="<<Rho_mean<<std::endl;
   std::cout<<"*** C_min="<<C_min<<"  ,  C_max="<<C_max<<"  ,  C_mean="<<C_mean<<std::endl;
   std::cout<<"*** Particle Maximum CFL="<<Particle_CFL_Max<<"  ,  Gas Maximum CFL="<<Gas_CFL_Max<<"  ,  Gas Maximum diffusive CFL="<<Gas_Max_Diff_CFL<<std::endl;
   std::cout<<"*** P0="<<P0<<"   ,   Number of Poisson solve iterations="<<PS_.num_iteration()<<std::endl;

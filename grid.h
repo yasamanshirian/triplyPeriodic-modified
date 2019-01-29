@@ -39,9 +39,9 @@ class grid
   std::ofstream stat_CMax;
   std::ofstream stat_CMin;
   std::ofstream stat_CMean;
-  std::ofstream stat_RhoMax;
-  std::ofstream stat_RhoMin;
-  std::ofstream stat_RhoMean;
+  //std::ofstream stat_RhoMax;
+  //std::ofstream stat_RhoMin;
+  //std::ofstream stat_RhoMean;
   std::ofstream stat_ParticleMaxCFL;
   std::ofstream stat_GasMaxCFL;
   std::ofstream stat_GasMaxDiffCFL;
@@ -82,13 +82,14 @@ class grid
   tensor0 Passive_Scalar_int;
   tensor0 Passive_Scalar_new;
   tensor0 Passive_Scalar_np1;
-  tensor0 Rho; //Gas density stored at cell center
-  tensor0 Rho_int;
-  tensor0 Rho_new;
-  tensor0 Rho_np1;
-  tensor0 RHS_Rho;
+  double Rho;
+  //tensor0 Rho; //Gas density stored at cell center
+  //tensor0 Rho_int;
+  //tensor0 Rho_new;
+  //tensor0 Rho_np1;
+  //tensor0 RHS_Rho;
   tensor0 RHS_Passive_Scalar;
-  tensor1 Rho_face; //Gas density stored at cell faces
+  //tensor1 Rho_face; //Gas density stored at cell faces
   tensor1 Passive_Scalar_face;//scalar concentration stored at cell faces
   tensor0 T; //Gas temperature stored at cell cneter
   tensor1 dummy; //dummt array for computations
@@ -112,7 +113,7 @@ class grid
   void Initialize();
   void Store();
   void TimeAdvance(); //advance one time step
-  void Update_Rho();
+  //void Update_Rho();
   void Update_Passive_Scalar();
   void C_Source(double);
   void Update_RU_WOP();
