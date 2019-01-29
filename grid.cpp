@@ -648,10 +648,11 @@ void grid::Update_RV_WOQ()
      
    //interpolation
   V.Equal_Divide(RV_int,Rho_forV); //comupte v_int at faces (note: Rho_face is already computed from previous sub-step @ Compute_RHS_Pois)
-  divergence.Equal_Div_F2C(V); //Divergence of v_int stored at cell center   Note: V at cell faces is already computed @Update_particle
-  dummy2.Equal_Grad_C2F(divergence); // d/dx_i div(v)
+  //divergence.Equal_Div_F2C(V); //Divergence of v_int stored at cell center   Note: V at cell faces is already computed @Update_particle
+  //dummy2.Equal_Grad_C2F(divergence); // d/dx_i div(v)
   dummy.Equal_Del2(V); //compute div(grad(v_i)) and store it in the dummy variable
-  RHS_RV.Equal_LinComb(param_->eta0()/3.,dummy2,param_->eta0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
+  //RHS_RV.Equal_LinComb(param_->eta0()/3.,dummy2,param_->eta0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
+  RHS_RV.Equal_Mult(param_->eta0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
   //convection in x direction:
   dummy.Equal_I_C2F(RV_int.x); //interpolate u to neighbour edges //Note:even though U&RU are stored on cell faces we use C2F interpolation here, should be careful!
   dummy2.Equal_Ix_C2F(U); //interpolate RU in x direction
@@ -778,9 +779,10 @@ void grid::Update_RU_WOP()
   //U.Equal_Divide(RU_int,Rho_face); //comupte u_int at faces (note: Rho_face is already computed from previous sub-step @ Compute_RHS_Pois)
   //at this point RHS_RU is equal to either zero or the values come from particle depends on TwoWayCoupling On or Off
   divergence.Equal_Div_F2C(U); //Divergence of u_int stored at cell center   Note: U at cell faces is already computed @Update_particle
-  dummy2.Equal_Grad_C2F(divergence); // d/dx_i div(u)
+  //dummy2.Equal_Grad_C2F(divergence); // d/dx_i div(u)
   dummy.Equal_Del2(U); //compute div(grad(u_i)) and store it in the dummy variable
-  RHS_RU.Equal_LinComb(-param_->mp()/size_->Vcell(),RHS_RU,param_->Mu0()/3.,dummy2,param_->Mu0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
+  //RHS_RU.Equal_LinComb(-param_->mp()/size_->Vcell(),RHS_RU,param_->Mu0()/3.,dummy2,param_->Mu0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
+  RHS_RU.Equal_Mult(param_->Mu0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
   //convection in x direction:
   dummy.Equal_I_C2F(U.x); //interpolate u to neighbour edges //Note:even though U&RU are stored on cell faces we use C2F interpolation here, should be careful!
   dummy2.Equal_Ix_C2F(RU_int); //interpolate RU in x direction
