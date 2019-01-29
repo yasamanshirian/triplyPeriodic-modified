@@ -113,7 +113,7 @@ class grid
   void Initialize();
   void Store();
   void TimeAdvance(); //advance one time step
-  //void Update_Rho();
+  void Update_Rho();
   void Update_Passive_Scalar();
   void C_Source(double);
   void Update_RU_WOP();

@@ -223,8 +223,8 @@ void grid::Initialize()
       //These files are initial condition for timestep=num_timestep
       com_->read(RU,"Restart_RU.bin");
       if (pc_->IsRoot()) std::cout<<"*+=*+=*+=*+=RU LOADED*+=*+=*+=*+="<<std::endl;
-      com_->read(Rho,"Restart_Rho.bin");
-      if (pc_->IsRoot()) std::cout<<"*+=*+=*+=*+=Rho LOADED*+=*+=*+=*+="<<std::endl;
+      //com_->read(Rho,"Restart_Rho.bin");
+      //if (pc_->IsRoot()) std::cout<<"*+=*+=*+=*+=Rho LOADED*+=*+=*+=*+="<<std::endl;
       com_->read(P,"Restart_P.bin");  
       if (pc_->IsRoot()) std::cout<<"*+=*+=*+=*+=P LOADED*+=*+=*+=*+="<<std::endl;
       part.Load_All();
@@ -605,13 +605,13 @@ void grid::TimeAdvance()
   num_timestep++;
 }
 
-void grid::Update_Rho()
-{
-  RHS_Rho.Equal_Div_F2C(RU_int); //In fact, here we compute minus RHS_Rho, i.e. div(RU)
-  Rho_np1.PlusEqual_Mult(-(param_->dt()*RK4_postCoeff[RK4_count]),RHS_Rho); //Update Rho_np1
-  if (RK4_count!=3) Rho_new.Equal_LinComb(1,Rho,-param_->dt()*RK4_preCoeff[RK4_count],RHS_Rho); //update Rho_new
-  else Rho_new=Rho_np1;
-}
+//void grid::Update_Rho()
+//{
+  //RHS_Rho.Equal_Div_F2C(RU_int); //In fact, here we compute minus RHS_Rho, i.e. div(RU)
+  //Rho_np1.PlusEqual_Mult(-(param_->dt()*RK4_postCoeff[RK4_count]),RHS_Rho); //Update Rho_np1
+  //if (RK4_count!=3) Rho_new.Equal_LinComb(1,Rho,-param_->dt()*RK4_preCoeff[RK4_count],RHS_Rho); //update Rho_new
+  //else Rho_new=Rho_np1;
+//}
 
 void grid::V_Source(double T)
 {
@@ -682,7 +682,7 @@ void grid::Update_RV_WOQ()
   }
   else{
       //dummy.x.Equal_Divide(RU_int.x,Rho_face.x); //comupte u_int at faces (note: Rho_face is already computed from previous sub-step @ Compute_RHS_Pois)
-      dummy.x.Equal_Divide(RU_int,Rho);
+      dummy.x.Equal_Divide(RU_int.x,Rho);
       dummy.x.Equal_Iy_C2F(dummy.x);
       RHS_RV.y.PlusEqual_Mult(-1,dummy.x);	
 	
@@ -808,11 +808,11 @@ void grid::Update_RU_WOP()
   //dummy.x.Equal_Mult(Rho_face.x,param_->gx());
   //dummy.y.Equal_Mult(Rho_face.y,param_->gy());
   //dummy.z.Equal_Mult(Rho_face.z,param_->gz());
-  dummy.x.Equal_Mult(Rho,param_->gx());
-  dummy.y.Equal_Mult(Rho,param_->gy());
-  dummy.z.Equal_Mult(Rho,param_->gz());
+  
  
-   RHS_RU += dummy;
+   RHS_RU.x += Rho*param_->gx();
+   RHS_RU.y += Rho*param_->gy();
+   RHS_RU.z += Rho*param_->gz();
     
   RU_np1.PlusEqual_Mult(param_->dt()*RK4_postCoeff[RK4_count],RHS_RU); //Update RU_np1
   if (RK4_count!=3) RU_new.Equal_LinComb(1,RU,param_->dt()*RK4_preCoeff[RK4_count],RHS_RU); //update RU_new
@@ -835,14 +835,14 @@ void grid::Update_P0()
     P0_new=P0_np1;
 }
 
-void grid::Compute_Div_U_new()
-{
-  dummy.x.Equal_Divide(1.,Rho_new);
-  dummy.y.Equal_Del2(dummy.x); //compute del2(1/rho_new) and store it in dummy.y
-  dummy.z=RHS_Part_Temp;
-  if (param_->Is_Cooling()) dummy.z.make_mean_zero();
-  divergence.Equal_LinComb( param_->k()/param_->Cp() , dummy.y , -param_->R()/(param_->Cp()*P0_new*size_->Vcell()) , dummy.z );
-}
+//void grid::Compute_Div_U_new()
+//{
+  //dummy.x.Equal_Divide(1.,Rho_new);
+  //dummy.y.Equal_Del2(dummy.x); //compute del2(1/rho_new) and store it in dummy.y
+  //dummy.z=RHS_Part_Temp;
+  //if (param_->Is_Cooling()) dummy.z.make_mean_zero();
+  //divergence.Equal_LinComb( param_->k()/param_->Cp() , dummy.y , -param_->R()/(param_->Cp()*P0_new*size_->Vcell()) , dummy.z );
+//}
 
 void grid::Compute_RHS_Pois()
 {
@@ -858,7 +858,7 @@ void grid::Compute_RHS_Pois()
 void grid::Solve_Poisson()
 {
   //dummy.Equal_Divide(1.,Rho_face); //compute coefficients
-  dummy.Equal_Divide(1.,Rho); //compute coefficients
+  dummy = 1./Rho; //compute coefficients
   PS_.Solve(dummy,P,RHS_Pois);
 }
 
@@ -870,7 +870,9 @@ void grid::Update_RU_WP()
   else RU_new=RU_np1;
 }
 
-void grid::Update_Particle()
+
+
+/*void grid::Update_Particle()
 {
   //interpolation
   U.Equal_Divide(RU_int,Rho_face); //comupte u_int at faces (note: Rho_face is already computed from previous sub-step @ Compute_RHS_Pois)
@@ -893,7 +895,7 @@ void grid::Update_Particle()
   part.Compute_RHS_Temp_new();
   part.part2gas_Temp_new(RHS_Part_Temp);
   
-}
+}*/
 
 void grid::TimeAdvance_RK4()
 {
@@ -946,7 +948,8 @@ void grid::Statistics()
   part.trajectory(T_cur); //store particle trajectory
   double Tp_mean = part.mean(part.T);
   double HT_mean = mean_energy_transferred;
-  dummy.x.Equal_Divide( P0/param_->R(), Rho );
+  //dummy.x.Equal_Divide( P0/param_->R(), Rho );
+  dummy.x = P0/param_->R()/Rho;
   double Tg_mean = dummy.x.mean();
   if (!pc_->IsRoot()) return;
   stat_Tg<<T_cur<<" "<<Tg_mean<<std::endl;
@@ -1102,7 +1105,7 @@ void grid::Write_info()
   //critical section ends
 }
 
-void grid::Test_Poisson()
+/*void grid::Test_Poisson()
 {
   P=0; //guess for poisson is 0
   double k1=3;
@@ -1150,7 +1153,7 @@ void grid::Test_Poisson()
   X=Rho.max();
   Y=Rho.min();
   std::cout<<"Max_Rho/Min_Rho="<<X/Y<<std::endl;
-}
+}*/
 
 
 
