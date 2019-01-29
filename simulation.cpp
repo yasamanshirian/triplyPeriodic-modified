@@ -52,7 +52,7 @@ int main (int argc,char *argv[] )
   grid GRID(&GSIZE,&PARAM,&PROC,&COMM);
   GRID.Initialize();
   // Time integration loop
-  auto start = high_resolution_clock::now();
+  if (MPI_RANK() == 0) auto start = high_resolution_clock::now();
   do {
       PARAM.update(GRID.T_cur);
       // RK4 loop
@@ -90,11 +90,11 @@ int main (int argc,char *argv[] )
       GRID.TimeAdvance();
       GRID.Statistics();
   }while ((GRID.T_cur<PARAM.T_final())&&(!GRID.Touch()));
-  auto stop = high_resolution_clock::now();
-  auto duration = duration_cast<microseconds>(stop-start);
-  cout << "run time: " << duration.count() << 
-        << " average time per RK4 step : " << duration.count()*PARAM.T_final()/PARAM.dt() << endl;
   MPI_Finalize();
   
-}
+  auto stop = high_resolution_clock::now();
+  auto duration = duration_cast<microseconds>(stop-start);
+  std::cout << "run time: " << duration.count() << 
+        " average time per RK4 step : " << duration.count()/PARAM.T_final()/PARAM.dt() << std::endl;
+  }
  
