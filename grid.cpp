@@ -65,7 +65,7 @@ grid::~grid()
       if (param_->Statistics())
 	{
 	  stat_TKE2.close();
-	  stat_TKE.close();
+	  //stat_TKE.close();
 	  stat_TKE_U.close();
 	  stat_TKE_V.close();
 	  stat_TKE_W.close();
