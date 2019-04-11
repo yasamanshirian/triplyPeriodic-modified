@@ -9,8 +9,7 @@
 #include "grid.h"
 #include "scalar_source.h"
 #include "vector_source.h"
-grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),RV(s,com),RV_int(s,com),RV_new(s,com),RV_np1(s,com),Passive_Scalar_int(s,com),Passive_Scalar_new(s,com),Passive_Scalar_np1(s,com),Passive_Scalar_face(s,com),Passive_Scalar(s,com),RHS_Passive_Scalar(s,com), S1(s,com), S2(s,com), RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),RV_WQ(s,com),RHS_RV(s,com),V(s,com),Q(s,com),RHS_Pois_Q(s,com),C(s,com), T(s,com),dummy(s,com),dummy2(s,com),divergence(s,com),RHS_Part_Temp(s,com),PS_(p,pc,s,com),part(p,pc,s)
-{
+grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),RV(s,com),RV_int(s,com),RV_new(s,com),RV_np1(s,com),Passive_Scalar_int(s,com),Passive_Scalar_new(s,com),Passive_Scalar_np1(s,com),Passive_Scalar_face(s,com),Passive_Scalar(s,com),RHS_Passive_Scalar(s,com), S1(s,com), S2(s,com), RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),RV_WQ(s,com),RHS_RV(s,com),V(s,com),Q(s,com),RHS_Pois_Q(s,com),C(s,com), T(s,com),dummy(s,com),dummy2(s,com),divergence(s,com),RHS_Part_Temp(s,com),PS_(p,pc,s,com),part(p,pc,s){
   size_=s;
   param_=p;
   pc_=pc;
@@ -223,6 +222,7 @@ void grid::Initialize()
       //These files are initial condition for timestep=num_timestep
       com_->read(RU,"Restart_RU.bin");
       if (pc_->IsRoot()) std::cout<<"*+=*+=*+=*+=RU LOADED*+=*+=*+=*+="<<std::endl;
+      Rho = param_->Rho0();
       //com_->read(Rho,"Restart_Rho.bin");
       //if (pc_->IsRoot()) std::cout<<"*+=*+=*+=*+=Rho LOADED*+=*+=*+=*+="<<std::endl;
       com_->read(P,"Restart_P.bin");  
@@ -612,6 +612,7 @@ void grid::TimeAdvance()
   //if (RK4_count!=3) Rho_new.Equal_LinComb(1,Rho,-param_->dt()*RK4_preCoeff[RK4_count],RHS_Rho); //update Rho_new
   //else Rho_new=Rho_np1;
 //}
+
 
 void grid::V_Source(double T)
 {
