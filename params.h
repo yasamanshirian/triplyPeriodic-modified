@@ -30,7 +30,7 @@ class params
   int elongated_box_;
   int solve_for_scalar_,solve_for_vector_;
   int filtering_; // filter=0(No filtering) otw have filtering for background velocity
-  double filter_size_; //size of the filter ( width)
+  double filter_size_,filterX_start_,filterY_start_,filterZ_start_; //size of the filter ( width)
   double gx_,gy_,gz_,gx1_,gy1_,gz1_,gx2_,gy2_,gz2_; //gravitioanl forces
   double A_,A1_,A2_; //forcing coefficient befor and after threshold
   double Cp_,Cv_,R_; //specific heat coeffs.
@@ -69,6 +69,9 @@ class params
   double solve_for_vector() const{return solve_for_vector_;}
   double filtering() const{return filtering_;}
   double filter_size() const{return filter_size_;}
+  double filterX_start() const{return filterX_start_;}
+  double filterY_start() const{return filterY_start_;}
+  double filterZ_start() const{return filterZ_start_;}
   double Tp() const{return Tp_;} //Particle momentum relaxation time
   double R() {return R_;}
   double P0() {return P0_;}

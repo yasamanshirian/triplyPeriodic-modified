@@ -536,35 +536,73 @@ void grid::TimeAdvance()
 void grid::FilterVelocity()
 {
   filter_w = param_->filter_size();
-  in_ilo=gri->il();
-  in_ihi=gri->ih();
-  in_jlo=gri->jl();
-  in_jhi=gri->jh();
-  in_klo=gri->kl();
-  in_khi=gri->kh();
+  int f_il,f_jl,f_kl;
+  f_il = int(size_->filterX_start()/size_->dx());
+  f_jl = int(size_->filterY_start()/size_->dy());
+  f_kl = int(size_->filterZ_start()/size_->dz());
+
+
+  
+  
+  in_ilo=size_->il();
+  in_ihi=size_->ih();
+  in_jlo=size_->jl();
+  in_jhi=size_->jh();
+  in_klo=size_->kl();
+  in_khi=size_->kh();
+  
   out_ilo=in_ilo;
   out_ihi=in_ihi;
   out_jlo=in_jlo;
   out_jhi=in_jhi;
   out_klo=in_klo;
   out_khi=in_khi;
+  
   bs_=size_->bs();
-  Nx_tot_=gri->Nx_tot();
-  Ny_tot_=gri->Ny_tot();
-  Nz_tot_=gri->Nz_tot();
+  Nx_tot_=size_->Nx_tot();
+  Ny_tot_=size_->Ny_tot();
+  Nz_tot_=size_->Nz_tot();
   NxNy_tot_=Nx_tot_*Ny_tot_;
-  Nx_=gri->Nx(); Ny_=gri->Ny(); Nz_=gri->Nz();
+  Nx_=size_->Nx(); Ny_=size_->Ny(); Nz_=size_->Nz();
+  int f_ih,f_jh,f_kh;
+  f_ih = f_il + int(filter_w/size_->dx()) - 1;
+  f_jh = f_jl + int(filter_w/size_->dy()) - 1;
+  f_kh = f_kl + int(filter_w/size_->dz()) - 1;  
+
+  if ( f_il >= in_ilo && f_il <= in_ihi ) fin_ilo = f_il;
+  else if (f_il < in_ilo && f_ih > in_ihi) {fin_ilo = in_ilo; fin_ihi = in_ihi;}
+  else fin_ilo = 1;
+  
+  if ( f_jl >= in_jlo && f_jl <= in_jhi ) fin_jlo = f_jl;
+  else if (f_jl < in_jlo && f_jh > in_jhi) {fin_jlo = in_jlo; fin_jhi = in_jhi;}
+  else fin_jlo = 1;
+
+  if ( f_kl >= in_klo && f_kl <= in_khi ) fin_ilo = f_kl;
+  else if (f_kl < in_klo && f_kh > in_khi) {fin_klo = in_klo; fin_khi = in_khi;}
+  else fin_klo = 1;
+
+
+
+  if (f_ih >= in_ilo && f_ih <= in_ihi) fin_ihi = f_ih;
+  else if (f_il > in_iho ) fin_ihi = 0;
+  }
+  if (f_jh >= in_jlo && f_jh <= in_jhi) fin_jhi = f_jh;
+  else if (f_il > in_iho ) fin_ihi = 0;
+  }
+  if (f_kh >= in_klo && f_kh <= in_khi) fin_khi = f_kh;
+  else if (f_kl > in_kho ) fin_khi = 0;
+  } 
+  
   length_=(Nx_-2*bs_)*(Ny_-2*bs_)*(Nz_-2*bs_);
   nbuff=(in_ihi-in_ilo)*(in_jhi-in_jlo)*(in_khi-in_klo);
-  nbuff_filter = filter_w**3;
+  
+  nbuff_filter = (fin_ihi-fin_ilo)*(fin_jhi-fin_jlo)*(fin_khi-fin_klo);
+ 
+  
   plan=fft_3d_create_plan(MPI_COMM_WORLD,gri->Nx_tot(),gri->Ny_tot(),gri->Nz_tot(),in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&nbuff);
   RU_fft=new FFT_DATA[nbuff];
-  if (pc_->IsRoot()){
-	plan_filter=fft_3d_create_plan(MPI_COMM_WORLD,gri->Nx_tot(),gri->Ny_tot(),gri->Nz_tot(),in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&nbuff_filter);
-  }
-  else{ 
-  	plan_filter=fft_3d_create_plan(MPI_COMM_WORLD,gri->Nx_tot(),gri->Ny_tot(),gri->Nz_tot(),1,0,1,0,1,0,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&nbuff_filter);
-  }
+  plan_filter=fft_3d_create_plan(MPI_COMM_WORLD,gri->Nx_tot(),gri->Ny_tot(),gri->Nz_tot(),fin_ilo,fin_ihi,fin_jlo,fin_jhi,fin_klo,fin_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&nbuff_filter);
+  
   filter_fft = new FFT_DATA[nbuff_filter];
   /* int count=0;
   for (int k=in_klo;k<=in_khi;k++)
@@ -581,7 +619,7 @@ void grid::FilterVelocity()
       for (int i=0;i<filter_w;i++)
         {
           filter_fft[count].im=0;
-          filter_fft[count++].re=1./filter_w**3;
+          filter_fft[count++].re=1./(int(filter_w/size_->dx())*int(filter_w/size_->dy())*int(filter_w/size_->dz()));
         }
   
   fft_3d(RU,RU_fft,1,plan);
