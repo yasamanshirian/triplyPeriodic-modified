@@ -55,6 +55,11 @@ grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s
 
 grid::~grid()
 {
+  
+  if ( param_->filtering()){
+	delete[] RU_fft;
+ 	delete[] filter_fft;
+  }
   if (pc_->IsRoot())
     {
       if (param_->Statistics())
@@ -527,6 +532,77 @@ void grid::TimeAdvance()
   num_timestep++;
 }
 
+
+void grid::FilterVelocity()
+{
+  filter_w = param_->filter_size();
+  in_ilo=gri->il();
+  in_ihi=gri->ih();
+  in_jlo=gri->jl();
+  in_jhi=gri->jh();
+  in_klo=gri->kl();
+  in_khi=gri->kh();
+  out_ilo=in_ilo;
+  out_ihi=in_ihi;
+  out_jlo=in_jlo;
+  out_jhi=in_jhi;
+  out_klo=in_klo;
+  out_khi=in_khi;
+  bs_=size_->bs();
+  Nx_tot_=gri->Nx_tot();
+  Ny_tot_=gri->Ny_tot();
+  Nz_tot_=gri->Nz_tot();
+  NxNy_tot_=Nx_tot_*Ny_tot_;
+  Nx_=gri->Nx(); Ny_=gri->Ny(); Nz_=gri->Nz();
+  length_=(Nx_-2*bs_)*(Ny_-2*bs_)*(Nz_-2*bs_);
+  nbuff=(in_ihi-in_ilo)*(in_jhi-in_jlo)*(in_khi-in_klo);
+  nbuff_filter = filter_w**3;
+  plan=fft_3d_create_plan(MPI_COMM_WORLD,gri->Nx_tot(),gri->Ny_tot(),gri->Nz_tot(),in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&nbuff);
+  RU_fft=new FFT_DATA[nbuff];
+  if (pc_->IsRoot()){
+	plan_filter=fft_3d_create_plan(MPI_COMM_WORLD,gri->Nx_tot(),gri->Ny_tot(),gri->Nz_tot(),in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&nbuff_filter);
+  }
+  else{ 
+  	plan_filter=fft_3d_create_plan(MPI_COMM_WORLD,gri->Nx_tot(),gri->Ny_tot(),gri->Nz_tot(),1,0,1,0,1,0,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&nbuff_filter);
+  }
+  filter_fft = new FFT_DATA[nbuff_filter];
+  /* int count=0;
+  for (int k=in_klo;k<=in_khi;k++)
+    for (int j=in_jlo;j<=in_jhi;j++)
+      for (int i=in_ilo;i<=in_ihi;i++)
+        {
+          RU_fft[count].im=0;
+          RU_fft[count++].re=RU(i-in_ilo+bs,j-in_jlo+bs,k-in_klo+bs);
+        }
+  */
+  count=0;
+  for (int k=0;k<filter_w;k++)
+    for (int j=0;j<filter_w;j++)
+      for (int i=0;i<filter_w;i++)
+        {
+          filter_fft[count].im=0;
+          filter_fft[count++].re=1./filter_w**3;
+        }
+  
+  fft_3d(RU,RU_fft,1,plan);
+  fft_3d(filter_fft,filter_fft,1,plan_filter);
+  count=0;
+  for (int k=in_klo;k<=in_khi;k++)
+    for (int j=in_jlo;j<=in_jhi;j++)
+      for (int i=in_ilo;i<=in_ihi;i++)
+        {
+          RU_fft[count].im=0;
+          RU_fft[count].re=RU_fft[count]*filter_fft[count];
+          count++;
+	}
+  //IFT
+  fft_3d(RU_fft,RU,-1,plan);
+  RU/=size_->size_tot();
+  RU.Update_Ghosts();
+
+
+
+}
 void grid::V_Source(double T)
 {
     double X,Y,Z;
@@ -719,7 +795,8 @@ void grid::Update_P0()
     dP0_dt = -param_->R()/param_->Cv()*mean_energy_transferred/size_->Vcell();
   
   P0_np1 += param_->dt()*RK4_postCoeff[RK4_count]*dP0_dt;
-  
+ delete[] fft_data;
+    
   if (RK4_count!=3) 
     P0_new = P0+param_->dt()*RK4_preCoeff[RK4_count]*dP0_dt;
   else 
