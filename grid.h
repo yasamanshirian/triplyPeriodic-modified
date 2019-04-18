@@ -114,6 +114,7 @@ class grid
   void Store();
   void TimeAdvance(); //advance one time step
   void Update_Rho();
+  void ConstructKerel();
   void FilterVelocity();
   void Update_Passive_Scalar();
   void C_Source(double);

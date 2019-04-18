@@ -23,6 +23,36 @@ grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s
   RK4_postCoeff[2]=1./3.;
   RK4_postCoeff[3]=1./6.;
   Is_touch_=0;
+  if (param_->filtering())
+  {
+   int in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi; 
+   in_ilo=size_->il();
+   in_ihi=size_->ih();
+   in_jlo=size_->jl();
+   in_jhi=size_->jh();
+   in_klo=size_->kl();
+   in_khi=size_->kh();
+  
+
+   int out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi;
+   out_ilo=in_ilo;
+   out_ihi=in_ihi;
+   out_jlo=in_jlo;
+   out_jhi=in_jhi;
+   out_klo=in_klo;
+   out_khi=in_khi;
+ 
+
+ 
+  
+  int nbuff_kernel;
+  nbuff_fft = (in_ihi-in_ilo)*(in_jhi-in_jlo)*(in_khi-in_klo);
+  
+  kernel_fft = new FFT_DATA[nbuff_fft];
+  RU_fft = new FFT_DATA[nbuff_fft];
+  tensor1 RU_tilde;
+ 
+  }
   if (pc->IsRoot())
     {
       touch_check.open("touch.check",std::ios::out|std::ios::trunc);
@@ -58,7 +88,7 @@ grid::~grid()
   
   if ( param_->filtering()){
 	delete[] RU_fft;
- 	delete[] filter_fft;
+ 	delete[] kernel_fft;
   }
   if (pc_->IsRoot())
     {
@@ -473,7 +503,16 @@ void grid::Store()
       filename_out_Data<<param_->data_dir()<<"RV"<<"_"<<num_timestep<<".bin";
       filename=filename_out_Data.str();
       com_->write(RV,(char*)(filename.c_str()));
-       
+      if (param_->filtering())
+      {
+	filename_out_Data.str("");
+        filename_out_Data.clear();
+        filename_out_Data<<param_->data_dir()<<"RU_tilde"<<"_"<<num_timestep<<".bin";
+        filename=filename_out_Data.str();
+        com_->write(RU_tilde,(char*)(filename.c_str()));
+      
+
+      }       
       //std::cout<<"before writing C in file" <<std::endl; 
       filename_out_Data.str("");
       filename_out_Data.clear();
@@ -533,78 +572,59 @@ void grid::TimeAdvance()
 }
 
 
+void grid::ConstructKernel()
+{
+  
+  
+  ker_Ncells = int(param_->kernel_size()/size_->dx());
+  ker_Np = ker_Ncells;
+  if (ker_Ncells % 2 == 0) ker_Np = ker_Ncells;
+  plan_kernel=fft_3d_create_plan(MPI_COMM_WORLD,size_->Nx_tot(),size_->Ny_tot(),size_->Nz_tot(),in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&kernel_fft);
+  
+  count=0;
+  for (int k=in_klo;k<=in_khi;k++)
+    for (int j=in_jlo;j<=in_jhi;j++)
+      for (int i=in_ilo;i<=in_ihi;i++)
+        {
+          filter_fft[count].im=0;
+          if (i <= (ker_Np - 1)/2 && j <= (ker_Np -1)/2 && k <= (ker_Np -1)/2)
+       	  {	
+		kernel_fft[count].re=1./ker_Ncells**3;
+		if (i == (ker_Np - 1)/2) kernel_fft[count].re/=2;
+		if (j == (ker_Np - 1)/2) kernel_fft[count].re/=2;
+        	if (k == (ker_Np - 1)/2) kernel_fft[count].re/=2;
+	  }
+	  else if (i >= size_->Nx_tot() - (ker_Np - 1)/2 && j >= size_->Ny_tot() - (ker_Np -1)/2 && k >= size_->Nz_tot() - (ker_Np -1)/2)
+       	  {
+		kernel_fft[count].re=1./ker_Ncells**3;
+		if (i == size_->Nx_tot() - (ker_Np - 1)/2) kernel_fft[count].re/=2;
+		if (j == size_->Ny_tot() - (ker_Np - 1)/2) kernel_fft[count].re/=2;
+        	if (k == size_->Nz_tot() - (ker_Np - 1)/2) kernel_fft[count].re/=2;
+	  }
+	  else{
+		kernel_fft[count].re=0; 
+	  }
+	 count++;
+	}
+  fft_3d(kernel_fft,kernel_fft,1,plan_kernel);
+  
+
+ 
+   
+
+  
+
+
+}
+
 void grid::FilterVelocity()
 {
-  filter_w = param_->filter_size();
-  int f_il,f_jl,f_kl;
-  f_il = int(size_->filterX_start()/size_->dx());
-  f_jl = int(size_->filterY_start()/size_->dy());
-  f_kl = int(size_->filterZ_start()/size_->dz());
-
-
   
   
-  in_ilo=size_->il();
-  in_ihi=size_->ih();
-  in_jlo=size_->jl();
-  in_jhi=size_->jh();
-  in_klo=size_->kl();
-  in_khi=size_->kh();
+   
+  plan=fft_3d_create_plan(MPI_COMM_WORLD,size_->Nx_tot(),size_->Ny_tot(),size_->Nz_tot(),in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&nbuff);
   
-  out_ilo=in_ilo;
-  out_ihi=in_ihi;
-  out_jlo=in_jlo;
-  out_jhi=in_jhi;
-  out_klo=in_klo;
-  out_khi=in_khi;
-  
-  bs_=size_->bs();
-  Nx_tot_=size_->Nx_tot();
-  Ny_tot_=size_->Ny_tot();
-  Nz_tot_=size_->Nz_tot();
-  NxNy_tot_=Nx_tot_*Ny_tot_;
-  Nx_=size_->Nx(); Ny_=size_->Ny(); Nz_=size_->Nz();
-  int f_ih,f_jh,f_kh;
-  f_ih = f_il + int(filter_w/size_->dx()) - 1;
-  f_jh = f_jl + int(filter_w/size_->dy()) - 1;
-  f_kh = f_kl + int(filter_w/size_->dz()) - 1;  
-
-  if ( f_il >= in_ilo && f_il <= in_ihi ) fin_ilo = f_il;
-  else if (f_il < in_ilo && f_ih > in_ihi) {fin_ilo = in_ilo; fin_ihi = in_ihi;}
-  else fin_ilo = 1;
-  
-  if ( f_jl >= in_jlo && f_jl <= in_jhi ) fin_jlo = f_jl;
-  else if (f_jl < in_jlo && f_jh > in_jhi) {fin_jlo = in_jlo; fin_jhi = in_jhi;}
-  else fin_jlo = 1;
-
-  if ( f_kl >= in_klo && f_kl <= in_khi ) fin_ilo = f_kl;
-  else if (f_kl < in_klo && f_kh > in_khi) {fin_klo = in_klo; fin_khi = in_khi;}
-  else fin_klo = 1;
-
-
-
-  if (f_ih >= in_ilo && f_ih <= in_ihi) fin_ihi = f_ih;
-  else if (f_il > in_iho ) fin_ihi = 0;
-  }
-  if (f_jh >= in_jlo && f_jh <= in_jhi) fin_jhi = f_jh;
-  else if (f_il > in_iho ) fin_ihi = 0;
-  }
-  if (f_kh >= in_klo && f_kh <= in_khi) fin_khi = f_kh;
-  else if (f_kl > in_kho ) fin_khi = 0;
-  } 
-  
-  length_=(Nx_-2*bs_)*(Ny_-2*bs_)*(Nz_-2*bs_);
-  nbuff=(in_ihi-in_ilo)*(in_jhi-in_jlo)*(in_khi-in_klo);
-  
-  nbuff_filter = (fin_ihi-fin_ilo)*(fin_jhi-fin_jlo)*(fin_khi-fin_klo);
- 
-  
-  plan=fft_3d_create_plan(MPI_COMM_WORLD,gri->Nx_tot(),gri->Ny_tot(),gri->Nz_tot(),in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&nbuff);
-  RU_fft=new FFT_DATA[nbuff];
-  plan_filter=fft_3d_create_plan(MPI_COMM_WORLD,gri->Nx_tot(),gri->Ny_tot(),gri->Nz_tot(),fin_ilo,fin_ihi,fin_jlo,fin_jhi,fin_klo,fin_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&nbuff_filter);
-  
-  filter_fft = new FFT_DATA[nbuff_filter];
-  /* int count=0;
+ /* int count=0;
   for (int k=in_klo;k<=in_khi;k++)
     for (int j=in_jlo;j<=in_jhi;j++)
       for (int i=in_ilo;i<=in_ihi;i++)
@@ -613,30 +633,20 @@ void grid::FilterVelocity()
           RU_fft[count++].re=RU(i-in_ilo+bs,j-in_jlo+bs,k-in_klo+bs);
         }
   */
-  count=0;
-  for (int k=0;k<filter_w;k++)
-    for (int j=0;j<filter_w;j++)
-      for (int i=0;i<filter_w;i++)
-        {
-          filter_fft[count].im=0;
-          filter_fft[count++].re=1./(int(filter_w/size_->dx())*int(filter_w/size_->dy())*int(filter_w/size_->dz()));
-        }
-  
   fft_3d(RU,RU_fft,1,plan);
-  fft_3d(filter_fft,filter_fft,1,plan_filter);
-  count=0;
+  int count=0;
   for (int k=in_klo;k<=in_khi;k++)
     for (int j=in_jlo;j<=in_jhi;j++)
       for (int i=in_ilo;i<=in_ihi;i++)
         {
           RU_fft[count].im=0;
-          RU_fft[count].re=RU_fft[count]*filter_fft[count];
-          count++;
+          RU_fft[count++].re=RU_fft[count]*kernel_fft[count];
+          
 	}
   //IFT
-  fft_3d(RU_fft,RU,-1,plan);
-  RU/=size_->size_tot();
-  RU.Update_Ghosts();
+  fft_3d(RU_fft,RU_tilde,-1,plan);
+  RU_tilde/=size_->size_tot();
+  RU_tilde.Update_Ghosts();
 
 
 

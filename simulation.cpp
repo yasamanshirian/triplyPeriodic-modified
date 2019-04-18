@@ -51,6 +51,7 @@ int main (int argc,char *argv[] )
   communicator COMM(&GSIZE,&PARAM,&PROC);
   grid GRID(&GSIZE,&PARAM,&PROC,&COMM);
   GRID.Initialize();
+  if (PARAM.filterin()) GRID.ConstructKernel();
   // Time integration loop
   auto start = high_resolution_clock::now();
   do {
@@ -68,6 +69,7 @@ int main (int argc,char *argv[] )
 	  	GRID.Solve_Poisson_Q();
 	  	GRID.Update_RV_WQ();
           }
+          if (PARAM.filtering()) GRID.FilterVelocity();
           GRID.Update_RU_WOP();
 	  //GRID.Compute_Div_U_new();
 	  GRID.Compute_RHS_Pois();
