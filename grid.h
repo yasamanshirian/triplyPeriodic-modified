@@ -21,6 +21,15 @@ class grid
   double RK4_preCoeff[4];
   double RK4_postCoeff[4];
   double mean_energy_transferred;
+  int nbuff_fft;
+  int ker_Ncells;
+  int ker_Np;
+  int in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi; 
+  int bs_;
+  FFT_DATA *kernel_fft;
+  FFT_DATA *RU_fft;
+  fft_plan_3d *plan; 
+  fft_plan_3d *plan_kernel;
   std::fstream touch_check;
   std::ofstream stat_Tg;
   std::ofstream stat_Tp;
@@ -61,6 +70,7 @@ class grid
   tensor1 RU_WP; //momentum with pressure gradient effect (should match the divergence condition)
   tensor1 RHS_RU;
   tensor1 U; //u stored at cell center
+  tensor1 RU_tilde;
   //tensor1 UC; //concentration *u stored at cell faces
   tensor1 RV; //rho*u stored at cell faces
   tensor1 RV_int; //previous RK4 substep value
@@ -114,7 +124,7 @@ class grid
   void Store();
   void TimeAdvance(); //advance one time step
   void Update_Rho();
-  void ConstructKerel();
+  void ConstructKernel();
   void FilterVelocity();
   void Update_Passive_Scalar();
   void C_Source(double);

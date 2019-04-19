@@ -25,7 +25,7 @@ params::params(char *address)
   param_trimmed_in>>elongated_box_;
   param_trimmed_in>>solve_for_scalar_;
   param_trimmed_in>>solve_for_vector_;
-  param_trimmed_in>>filtering_>>filter_size_;
+  param_trimmed_in>>filtering_>>kernel_size_;
   param_trimmed_in>>bs_;
   param_trimmed_in>>Np_track_;
   param_trimmed_in>>T_final_>>dt_>>threshold_;

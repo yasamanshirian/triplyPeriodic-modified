@@ -2,6 +2,7 @@
 #include <sstream>
 #include <math.h>
 #include <algorithm> 
+#include <complex>
 #include "proc.h"
 #include "params.h"
 #include "gridsize.h"
@@ -9,7 +10,8 @@
 #include "grid.h"
 #include "scalar_source.h"
 #include "vector_source.h"
-grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),RV(s,com),RV_int(s,com),RV_new(s,com),RV_np1(s,com),Passive_Scalar_int(s,com),Passive_Scalar_new(s,com),Passive_Scalar_np1(s,com),Passive_Scalar_face(s,com),Passive_Scalar(s,com),RHS_Passive_Scalar(s,com), S1(s,com), S2(s,com), RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),RV_WQ(s,com),RHS_RV(s,com),V(s,com),Q(s,com),RHS_Pois_Q(s,com),C(s,com), T(s,com),dummy(s,com),dummy2(s,com),divergence(s,com),RHS_Part_Temp(s,com),PS_(p,pc,s,com),part(p,pc,s){
+
+grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),RU_tilde(s,com),RV(s,com),RV_int(s,com),RV_new(s,com),RV_np1(s,com),Passive_Scalar_int(s,com),Passive_Scalar_new(s,com),Passive_Scalar_np1(s,com),Passive_Scalar_face(s,com),Passive_Scalar(s,com),RHS_Passive_Scalar(s,com), S1(s,com), S2(s,com), RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),RV_WQ(s,com),RHS_RV(s,com),V(s,com),Q(s,com),RHS_Pois_Q(s,com),C(s,com), T(s,com),dummy(s,com),dummy2(s,com),divergence(s,com),RHS_Part_Temp(s,com),PS_(p,pc,s,com),part(p,pc,s){
   size_=s;
   param_=p;
   pc_=pc;
@@ -23,36 +25,23 @@ grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s
   RK4_postCoeff[2]=1./3.;
   RK4_postCoeff[3]=1./6.;
   Is_touch_=0;
-  if (param_->filtering())
-  {
-   int in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi; 
-   in_ilo=size_->il();
-   in_ihi=size_->ih();
-   in_jlo=size_->jl();
-   in_jhi=size_->jh();
-   in_klo=size_->kl();
-   in_khi=size_->kh();
-  
-
-   int out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi;
-   out_ilo=in_ilo;
-   out_ihi=in_ihi;
-   out_jlo=in_jlo;
-   out_jhi=in_jhi;
-   out_klo=in_klo;
-   out_khi=in_khi;
- 
-
- 
-  
-  int nbuff_kernel;
+  in_ilo=size_->il();
+  in_ihi=size_->ih();
+  in_jlo=size_->jl();
+  in_jhi=size_->jh();
+  in_klo=size_->kl();
+  in_khi=size_->kh();
+  out_ilo=in_ilo;
+  out_ihi=in_ihi;
+  out_jlo=in_jlo;
+  out_jhi=in_jhi;
+  out_klo=in_klo;
+  out_khi=in_khi;
+  bs_=size_->bs();
   nbuff_fft = (in_ihi-in_ilo)*(in_jhi-in_jlo)*(in_khi-in_klo);
-  
-  kernel_fft = new FFT_DATA[nbuff_fft];
-  RU_fft = new FFT_DATA[nbuff_fft];
-  tensor1 RU_tilde;
- 
-  }
+  kernel_fft =new FFT_DATA[nbuff_fft];
+  RU_fft =new FFT_DATA[nbuff_fft];
+    
   if (pc->IsRoot())
     {
       touch_check.open("touch.check",std::ios::out|std::ios::trunc);
@@ -86,10 +75,9 @@ grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s
 grid::~grid()
 {
   
-  if ( param_->filtering()){
-	delete[] RU_fft;
- 	delete[] kernel_fft;
-  }
+  delete[] RU_fft;
+  delete[] kernel_fft;
+  
   if (pc_->IsRoot())
     {
       if (param_->Statistics())
@@ -451,7 +439,7 @@ void grid::Initialize()
   //Need to compute rho at faces once here, after this, Compute_RHS_Pois computes it
   //Need to compute Passive_Scalar at faces once here, after this, Update_Passive_Scalar computes it
   Passive_Scalar_face.Equal_I_C2F(Passive_Scalar);
-    Write_info();
+  Write_info();
 }
 
 void grid::Store()
@@ -579,24 +567,24 @@ void grid::ConstructKernel()
   ker_Ncells = int(param_->kernel_size()/size_->dx());
   ker_Np = ker_Ncells;
   if (ker_Ncells % 2 == 0) ker_Np = ker_Ncells;
-  plan_kernel=fft_3d_create_plan(MPI_COMM_WORLD,size_->Nx_tot(),size_->Ny_tot(),size_->Nz_tot(),in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&kernel_fft);
-  
+  plan_kernel=fft_3d_create_plan(MPI_COMM_WORLD,size_->Nx_tot(),size_->Ny_tot(),size_->Nz_tot(),in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&nbuff_fft);
+  int count;
   count=0;
   for (int k=in_klo;k<=in_khi;k++)
     for (int j=in_jlo;j<=in_jhi;j++)
       for (int i=in_ilo;i<=in_ihi;i++)
         {
-          filter_fft[count].im=0;
+          kernel_fft[count].im=0;
           if (i <= (ker_Np - 1)/2 && j <= (ker_Np -1)/2 && k <= (ker_Np -1)/2)
        	  {	
-		kernel_fft[count].re=1./ker_Ncells**3;
+		kernel_fft[count].re=1./ker_Ncells*ker_Ncells*ker_Ncells;
 		if (i == (ker_Np - 1)/2) kernel_fft[count].re/=2;
 		if (j == (ker_Np - 1)/2) kernel_fft[count].re/=2;
         	if (k == (ker_Np - 1)/2) kernel_fft[count].re/=2;
 	  }
 	  else if (i >= size_->Nx_tot() - (ker_Np - 1)/2 && j >= size_->Ny_tot() - (ker_Np -1)/2 && k >= size_->Nz_tot() - (ker_Np -1)/2)
        	  {
-		kernel_fft[count].re=1./ker_Ncells**3;
+		kernel_fft[count].re=1./ker_Ncells*ker_Ncells*ker_Ncells;
 		if (i == size_->Nx_tot() - (ker_Np - 1)/2) kernel_fft[count].re/=2;
 		if (j == size_->Ny_tot() - (ker_Np - 1)/2) kernel_fft[count].re/=2;
         	if (k == size_->Nz_tot() - (ker_Np - 1)/2) kernel_fft[count].re/=2;
@@ -619,34 +607,48 @@ void grid::ConstructKernel()
 
 void grid::FilterVelocity()
 {
-  
-  
    
-  plan=fft_3d_create_plan(MPI_COMM_WORLD,size_->Nx_tot(),size_->Ny_tot(),size_->Nz_tot(),in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&nbuff);
   
- /* int count=0;
+  plan=fft_3d_create_plan(MPI_COMM_WORLD,size_->Nx_tot(),size_->Ny_tot(),size_->Nz_tot(),in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&nbuff_fft);
+  
+ int count=0;
   for (int k=in_klo;k<=in_khi;k++)
-    for (int j=in_jlo;j<=in_jhi;j++)
-      for (int i=in_ilo;i<=in_ihi;i++)
+    for (int j=in_jlo;j<=out_jhi;j++)
+      for (int i=in_ilo;i<=out_ihi;i++)
         {
           RU_fft[count].im=0;
-          RU_fft[count++].re=RU(i-in_ilo+bs,j-in_jlo+bs,k-in_klo+bs);
+          RU_fft[count++].re=RU_int.x(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_);
         }
-  */
-  fft_3d(RU,RU_fft,1,plan);
-  int count=0;
+  
+  fft_3d(RU_fft,RU_fft,1,plan);
+  count=0;
   for (int k=in_klo;k<=in_khi;k++)
     for (int j=in_jlo;j<=in_jhi;j++)
       for (int i=in_ilo;i<=in_ihi;i++)
         {
           RU_fft[count].im=0;
-          RU_fft[count++].re=RU_fft[count]*kernel_fft[count];
+          RU_fft[count++].re=RU_fft[count].re*kernel_fft[count].re;
           
 	}
   //IFT
-  fft_3d(RU_fft,RU_tilde,-1,plan);
-  RU_tilde/=size_->size_tot();
-  RU_tilde.Update_Ghosts();
+  fft_3d(RU_fft,RU_fft,-1,plan);
+
+ count=0;
+ //RU_tilde=RU_int;
+ int tot = size_->size_tot();
+  for (int k=in_klo;k<=in_khi;k++)
+    for (int j=in_jlo;j<=in_jhi;j++)
+      for (int i=in_ilo;i<=in_ihi;i++)
+        {
+         
+          RU_int.x(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_)=RU_fft[count++].re/(tot);
+          
+          
+	}
+  
+
+  
+  RU_int.Update_Ghosts();
 
 
 
@@ -843,7 +845,6 @@ void grid::Update_P0()
     dP0_dt = -param_->R()/param_->Cv()*mean_energy_transferred/size_->Vcell();
   
   P0_np1 += param_->dt()*RK4_postCoeff[RK4_count]*dP0_dt;
- delete[] fft_data;
     
   if (RK4_count!=3) 
     P0_new = P0+param_->dt()*RK4_preCoeff[RK4_count]*dP0_dt;
