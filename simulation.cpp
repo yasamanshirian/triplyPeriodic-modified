@@ -53,29 +53,27 @@ int main (int argc,char *argv[] )
   GRID.Initialize();
   if (PARAM.filtering()) GRID.ConstructKernel();
   // Time integration loop
-  auto start = high_resolution_clock::now();
+  //auto start = high_resolution_clock::now();
   do {
       PARAM.update(GRID.T_cur);
       // RK4 loop
+      //if (PROC.IsRoot()) std::cout << "next RK4 step"<< std::endl;
       for (GRID.RK4_count=0;GRID.RK4_count<4;GRID.RK4_count++)
 	{
-	  //GRID.Update_Rho();
-	  //GRID.Update_P0();
-	  //GRID.Update_Particle();
-	  if (PARAM.solve_for_scalar())GRID.Update_Passive_Scalar();
+	 if (PARAM.solve_for_scalar())GRID.Update_Passive_Scalar();
           if (PARAM.solve_for_vector()){
  	  	GRID.Update_RV_WOQ();
 	  	GRID.Compute_RHS_Pois_Q();
 	  	GRID.Solve_Poisson_Q();
 	  	GRID.Update_RV_WQ();
           }
-          GRID.Update_RU_WOP();
-	  //GRID.Compute_Div_U_new();
-	  GRID.Compute_RHS_Pois();
-	  GRID.Solve_Poisson();
-	  GRID.Update_RU_WP();
-	  if (PARAM.filtering()) GRID.FilterVelocity();
-          GRID.TimeAdvance_RK4();
+          if (PARAM.filtering()) GRID.FilterVelocity();
+          //GRID.Update_RU_WOP();
+	  
+	  //GRID.Compute_RHS_Pois();
+	  //GRID.Solve_Poisson();
+	  //GRID.Update_RU_WP();
+	  GRID.TimeAdvance_RK4();
 	}
      
       GRID.RU_np1.make_mean_U0(RhoU_);
@@ -88,13 +86,13 @@ int main (int argc,char *argv[] )
                 
       }
       //GRID.RV_np1.make_mean_U0(RhoV_);
-      //GRID.RU_np1.make_mean_zero();
       GRID.TimeAdvance();
       GRID.Statistics();
+      //std::cout << "statistics reported! "<< std::endl;
   }while ((GRID.T_cur<PARAM.T_final())&&(!GRID.Touch()));
   
   
-  auto stop = high_resolution_clock::now();
+  /*auto stop = high_resolution_clock::now();
   auto d = duration_cast<seconds>(stop-start);
   double duration =  d.count();
   double longest_duration;
@@ -102,7 +100,7 @@ int main (int argc,char *argv[] )
   if (PROC.IsRoot()) {
   	std::cout << "run time: " << longest_duration << 
         " average time per RK4 step : " << longest_duration/(PARAM.T_final()/PARAM.dt()) << std::endl;
-  }
+  }*/
   MPI_Finalize();
   }
  

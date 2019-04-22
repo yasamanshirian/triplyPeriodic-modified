@@ -1,6 +1,6 @@
 OBJS=simulation.o proc.o params.o gridsize.o particle.o tensor0.o tensor1.o  poisson.o communicator.o grid.o
-CPP=mpiicc
-CFLAGS=-O3
+CPP=mpicc
+CFLAGS=-std=c++11 -O3
 FFT_DIR=/home/mani/yshirian/tools/fft
 FFTW_DIR=/home/mani/yshirian/tools/fftw-2.1.5
 HYPRE_DIR=/home/mani/yshirian/tools/HYPRE
