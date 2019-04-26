@@ -35,10 +35,10 @@ class communicator
   communicator(){}
   communicator(gridsize*,params*,proc*);
   ~communicator();
-  void read(tensor0&,char*);
-  void write(tensor0&,char*);
-  void read(tensor1&,char*);
-  void write(tensor1&,char*);
+  void read(tensor0&,const char*);
+  void write(tensor0&,const char*);
+  void read(tensor1&,const char*);
+  void write(tensor1&,const char*);
   void SEND_RECV_BLOCKING(tensor0&);
   void SEND_RECV_BLOCKING(tensor1&);
   void SEND_RECV_BLOCKING_CUM(tensor0&); //(cumulative send_recv) halo cells value += to the value of neighbor

@@ -11,6 +11,11 @@ class communicator;
 #include <mpi.h>
 #include "poisson.h"
 #include <fstream>
+struct tensor_fft{
+	FFT_DATA  *x;
+  	FFT_DATA  *y;
+  	FFT_DATA  *z;
+        };
 class grid
 {
   params *param_;
@@ -27,7 +32,9 @@ class grid
   int in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi; 
   int bs_;
   FFT_DATA *kernel_fft;
-  FFT_DATA *RU_fft;
+  //data_fft kernel_fft;
+  tensor_fft RU_fft;
+  //FFT_DATA *RU_fft;
   fft_plan_3d *plan; 
   fft_plan_3d *plan_kernel;
   std::fstream touch_check;
@@ -60,7 +67,7 @@ class grid
   int sign_fnc(double); //=1 if double>=0 otherwise is -1
   double ABS(double); //=|double|
   void Write_info(); //Wrtie information to info.txt
-  void open_stat_file(char*,std::ofstream&); //open a stat file
+  void open_stat_file(const char*,std::ofstream&); //open a stat file
  public:
   particle part; //particle tracking class
   tensor1 RU; //rho*u stored at cell faces

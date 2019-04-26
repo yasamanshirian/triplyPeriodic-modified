@@ -62,7 +62,7 @@ communicator::~communicator()
   delete [] Sbuf;
 }
 
-void communicator::read(tensor0 &T,char *adrs)
+void communicator::read(tensor0 &T,const char *adrs)
 {
   MPI_File_open(MPI_COMM_WORLD,adrs,MPI_MODE_RDONLY,MPI_INFO_NULL,&Myfile);
   MPI_File_set_view(Myfile,0,MPI_DOUBLE,filetype,"native",MPI_INFO_NULL);
@@ -71,7 +71,7 @@ void communicator::read(tensor0 &T,char *adrs)
   SEND_RECV_BLOCKING(T);
 }
 
-void communicator::read(tensor1 &T,char *adrs)
+void communicator::read(tensor1 &T,const char *adrs)
 {
   MPI_File_open(MPI_COMM_WORLD,adrs,MPI_MODE_RDONLY,MPI_INFO_NULL,&Myfile);
   MPI_File_set_view(Myfile,0,MPI_DOUBLE,filetype,"native",MPI_INFO_NULL);
@@ -84,7 +84,7 @@ void communicator::read(tensor1 &T,char *adrs)
   SEND_RECV_BLOCKING(T);
 }
 
-void communicator::write(tensor0 &T,char *adrs)
+void communicator::write(tensor0 &T,const char *adrs)
 {
   MPI_File_open(MPI_COMM_WORLD,adrs,MPI_MODE_CREATE|MPI_MODE_WRONLY,MPI_INFO_NULL,&Myfile);
   MPI_File_set_view(Myfile,0,MPI_DOUBLE,filetype,"native",MPI_INFO_NULL);
@@ -92,7 +92,7 @@ void communicator::write(tensor0 &T,char *adrs)
   MPI_File_close(&Myfile);
 }
 
-void communicator::write(tensor1 &T,char *adrs)
+void communicator::write(tensor1 &T,const char *adrs)
 {
   MPI_File_open(MPI_COMM_WORLD,adrs,MPI_MODE_CREATE|MPI_MODE_WRONLY,MPI_INFO_NULL,&Myfile);
   MPI_File_set_view(Myfile,0,MPI_DOUBLE,filetype,"native",MPI_INFO_NULL);

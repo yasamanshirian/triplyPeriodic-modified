@@ -73,10 +73,10 @@ int main (int argc,char *argv[] )
 	  //GRID.Compute_RHS_Pois();
 	  //GRID.Solve_Poisson();
 	  //GRID.Update_RU_WP();
-	  GRID.TimeAdvance_RK4();
+	  //GRID.TimeAdvance_RK4();
 	}
      
-      GRID.RU_np1.make_mean_U0(RhoU_);
+      //GRID.RU_np1.make_mean_U0(RhoU_);
       if(PARAM.elongated_box() == 1){
       	GRID.RU_np1.y.kill_strong_modes();
       	GRID.RU_np1.z.kill_strong_modes();

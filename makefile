@@ -9,7 +9,7 @@ CINCLUDES=-I $(HYPRE_DIR)/include -I $(FFTW_DIR)/include
 CDEFS = -DHAVE_CONFIG_H -DHYPRE_TIMING -DFFT_FFTW
 CFLAGS2=$(CFLAGS) $(CDEFS)
 LFLAGS=-L $(FFT_DIR)/Obj_certainty -L $(FFTW_DIR)/lib -L $(HYPRE_DIR)/lib
-LIBS=-lfft -lfftw -lfftw_mpi -lHYPRE -lm -lstdc++
+LIBS=-lfft -lfftw -lfftw_mpi -lHYPRE -lm -lstdc++ -lirc
 
 
 #default box_k0 ElongatedBox_k05 ElongatedBox_k025 box_k1 box_k2 box_k4 box_k8 

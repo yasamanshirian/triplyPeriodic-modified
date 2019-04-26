@@ -39,8 +39,15 @@ grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s
   out_khi=in_khi;
   bs_=size_->bs();
   nbuff_fft = (in_ihi-in_ilo)*(in_jhi-in_jlo)*(in_khi-in_klo);
+  plan_kernel=fft_3d_create_plan(MPI_COMM_WORLD,size_->Nx_tot(),size_->Ny_tot(),size_->Nz_tot(),in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&nbuff_fft);
+  plan=fft_3d_create_plan(MPI_COMM_WORLD,size_->Nx_tot(),size_->Ny_tot(),size_->Nz_tot(),in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&nbuff_fft);
+  
+  RU_fft.x = new FFT_DATA[nbuff_fft];
+  RU_fft.y = new FFT_DATA[nbuff_fft];
+  RU_fft.z = new FFT_DATA[nbuff_fft];
+  std::cout <<"allocated memory for RU_fft" << std::endl;       
   kernel_fft =new FFT_DATA[nbuff_fft];
-  RU_fft =new FFT_DATA[nbuff_fft];
+  //RU_fft =new FFT_DATA[nbuff_fft];
     
   if (pc->IsRoot())
     {
@@ -75,7 +82,9 @@ grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s
 grid::~grid()
 {
   
-  delete[] RU_fft;
+  delete[] RU_fft.x;
+  delete[] RU_fft.y;
+  delete[] RU_fft.z;
   delete[] kernel_fft;
   
   if (pc_->IsRoot())
@@ -462,10 +471,8 @@ void grid::Store()
       std::ostringstream filename_out_Data;
       filename_out_Data<<param_->data_dir()<<"XYZ.bin";
       std::string filename=filename_out_Data.str();
-      if(pc_->IsRoot()) std::cout << "before saving XYZ "<< std::endl;
       com_->write(dummy,(char*)(filename.c_str()));
       
-      if(pc_->IsRoot()) std::cout << "before saving S1 "<< std::endl;
       if ( param_->solve_for_scalar()){
       	filename_out_Data.str("");
       	filename_out_Data.clear();
@@ -485,12 +492,11 @@ void grid::Store()
   //std::cout<<"my number of steps" << num_timestep<<std::endl;
   if ((num_timestep%param_->data_freq_fast()==0)||(Is_touch_))
     { 
-      //std::cout<<"before writing RU in file" <<std::endl;
       std::ostringstream filename_out_Data;
       filename_out_Data<<param_->data_dir()<<"RU"<<"_"<<num_timestep<<".bin";
       std::string filename=filename_out_Data.str();
       com_->write(RU,(char*)(filename.c_str()));
-      //std::cout<<"after writing RU in file" <<std::endl;
+      
       filename_out_Data.str("");
       filename_out_Data.clear();
       filename_out_Data<<param_->data_dir()<<"RV"<<"_"<<num_timestep<<".bin";
@@ -506,13 +512,11 @@ void grid::Store()
       
 
       }       
-      //std::cout<<"before writing C in file" <<std::endl; 
       filename_out_Data.str("");
       filename_out_Data.clear();
       filename_out_Data<<param_->data_dir()<<"C"<<"_"<<num_timestep<<".bin";
       filename=filename_out_Data.str();
       com_->write(Passive_Scalar,(char*)(filename.c_str()));
-      //std::cout<<"after writing C in file" <<std::endl;
       if (pc_->IsRoot())
 	{
 	  filename_out_Data.str("");
@@ -572,8 +576,13 @@ void grid::ConstructKernel()
   ker_Ncells = int(param_->kernel_size()/size_->dx());
   ker_Np = ker_Ncells;
   if (ker_Ncells % 2 == 0) ker_Np = ker_Ncells + 1;
-  plan_kernel=fft_3d_create_plan(MPI_COMM_WORLD,size_->Nx_tot(),size_->Ny_tot(),size_->Nz_tot(),in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&nbuff_fft);
   
+ 
+
+  //std::cout << "kernel size:"<< ker_Np << std::endl;
+  //std::cout << "half kernel:"<< (ker_Np -1)/2 << std::endl;
+
+
   int count;
   count=0;
   for (int k=in_klo;k<=in_khi;k++)
@@ -581,36 +590,29 @@ void grid::ConstructKernel()
       for (int i=in_ilo;i<=in_ihi;i++)
         {
           kernel_fft[count].im=0;
+	  kernel_fft[count].re=0;
+          if (i <= (ker_Np -1)/2 || i>=  size_->Nx_tot() - (ker_Np - 1)/2)
+		if (j <= (ker_Np -1)/2 || j>=  size_->Ny_tot() - (ker_Np - 1)/2)
+			if (k <= (ker_Np -1)/2 || k>=  size_->Nz_tot() - (ker_Np - 1)/2){
+              			kernel_fft[count].re=1./(ker_Ncells*ker_Ncells*ker_Ncells);
+				 if (ker_Ncells % 2 == 0 && ker_Ncells != size_->Nx_tot()){
+					if (i == (ker_Np - 1)/2 || i == size_->Nx_tot() - (ker_Np - 1)/2) kernel_fft[count].re/=2;
+					if (j == (ker_Np - 1)/2 || j == size_->Ny_tot() - (ker_Np - 1)/2) kernel_fft[count].re/=2;
+        				if (k == (ker_Np - 1)/2 || k == size_->Nz_tot() - (ker_Np - 1)/2) kernel_fft[count].re/=2;
+	  			}
+			}
+	  	
+               
+          
 
-          if (i <= (ker_Np -1)/2 && j <= (ker_Np -1)/2 && k <= (ker_Np -1)/2)
-       	  {	
-		kernel_fft[count].re=1./(ker_Ncells*ker_Ncells*ker_Ncells);
-                if (ker_Ncells %2 == 0){
-			if (i == (ker_Np - 1)/2) kernel_fft[count].re/=2;
-			if (j == (ker_Np - 1)/2) kernel_fft[count].re/=2;
-        		if (k == (ker_Np - 1)/2) kernel_fft[count].re/=2;
-	  	}
-	  }
-	  else if (i >= size_->Nx_tot() - (ker_Np - 1)/2 && j >= size_->Ny_tot() - (ker_Np -1)/2 && k >= size_->Nz_tot() - (ker_Np -1)/2)
-       	  {
-		kernel_fft[count].re=1./(ker_Ncells*ker_Ncells*ker_Ncells);
-		if(ker_Ncells %2 == 0){
-			if (i == size_->Nx_tot() - (ker_Np - 1)/2) kernel_fft[count].re/=2;
-			if (j == size_->Ny_tot() - (ker_Np - 1)/2) kernel_fft[count].re/=2;
-        		if (k == size_->Nz_tot() - (ker_Np - 1)/2) kernel_fft[count].re/=2;
-	  	}
- 	  }
-	  else{
-		kernel_fft[count].re=0; 
-	  }
 	 count++;
 	}
-  /*if ( pc_->IsRoot()){
+  /*if( pc_->IsRoot()){
   count=0;
   
-  for (int k=0;k<=(ker_Np -1)/2;k++)
-    for (int j=0;j<=(ker_Np -1)/2;j++)
-      for (int i=0;i<=(ker_Np -1)/2;i++)
+  for (int k=in_klo;k<=1;k++)
+    for (int j=in_jlo;j<=in_jhi;j++)
+      for (int i=in_ilo;i<=in_ihi;i++)
         {
 	
 	std::cout << "kernel("<< i<< ","<< j<< "," << k << ")="<< kernel_fft[count].re <<std::endl;
@@ -619,12 +621,7 @@ void grid::ConstructKernel()
    	} 
   }*/
   fft_3d(kernel_fft,kernel_fft,1,plan_kernel);
-  
-
- 
-   
-
-  
+    
 
 
 }
@@ -632,47 +629,72 @@ void grid::ConstructKernel()
 void grid::FilterVelocity()
 {
    
-  
-  plan=fft_3d_create_plan(MPI_COMM_WORLD,size_->Nx_tot(),size_->Ny_tot(),size_->Nz_tot(),in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&nbuff_fft);
-  
+ 
   int count=0;
   for (int k=in_klo;k<=in_khi;k++)
-    for (int j=in_jlo;j<=out_jhi;j++)
-      for (int i=in_ilo;i<=out_ihi;i++)
+    	for (int j=in_jlo;j<=out_jhi;j++)
+      		for (int i=in_ilo;i<=out_ihi;i++)
         {
-          RU_fft[count].im=0;
-          RU_fft[count++].re=RU_int.x(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_);
+          RU_fft.x[count].im=0;
+          RU_fft.x[count].re=RU_int.x(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_);
+	  
+          RU_fft.y[count].im=0;
+          RU_fft.y[count].re=RU_int.y(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_);
+	  
+          RU_fft.z[count].im=0;
+          RU_fft.z[count++].re=RU_int.z(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_);
+	  
         }
   
-  fft_3d(RU_fft,RU_fft,1,plan);
+  fft_3d(RU_fft.x,RU_fft.x,1,plan);
+  fft_3d(RU_fft.y,RU_fft.y,1,plan);
+  fft_3d(RU_fft.z,RU_fft.z,1,plan);
   count=0;
   for (int k=in_klo;k<=in_khi;k++)
     for (int j=in_jlo;j<=in_jhi;j++)
       for (int i=in_ilo;i<=in_ihi;i++)
         {
-          RU_fft[count].im=RU_fft[count].im*kernel_fft[count].im;
-
-          RU_fft[count++].re=RU_fft[count].re*kernel_fft[count].re;
+          RU_fft.x[count].im=RU_fft.x[count].im*kernel_fft[count].im;
+	  RU_fft.x[count].re=RU_fft.x[count].re*kernel_fft[count].re;
+          
+	  RU_fft.y[count].im=RU_fft.y[count].im*kernel_fft[count].im;
+          RU_fft.y[count].re=RU_fft.y[count].re*kernel_fft[count].re;
+          
+	  RU_fft.z[count].im=RU_fft.z[count].im*kernel_fft[count].im;
+          RU_fft.z[count].re=RU_fft.z[count].re*kernel_fft[count].re;
+          count++;
           
 	}
   //IFT
-  fft_3d(RU_fft,RU_fft,-1,plan);
+  fft_3d(RU_fft.x,RU_fft.x,-1,plan);
+  fft_3d(RU_fft.y,RU_fft.y,-1,plan);
+  fft_3d(RU_fft.z,RU_fft.z,-1,plan);
+
+
 
   count=0;
+  
   RU_tilde=RU_int;
+  //if (pc_->IsRoot()) std::cout << "RU(0,0,0): "<< RU_tilde.x(bs_,bs_,bs_) << std::endl;
+   
   int tot = size_->size_tot();
    for (int k=in_klo;k<=in_khi;k++)
      for (int j=in_jlo;j<=in_jhi;j++)
        for (int i=in_ilo;i<=in_ihi;i++)
          {
          
-           RU_tilde.x(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_)=RU_fft[count++].re/(tot);
+           RU_tilde.x(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_)=RU_fft.x[count].re/(tot);
+           RU_tilde.y(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_)=RU_fft.y[count].re/(tot);
+           RU_tilde.z(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_)=RU_fft.z[count++].re/(tot);
+           
+
+
 	 }
   
 
-   //if (pc_->IsRoot()) std::cout << "RU_tilde(0,0,0): "<< RU_tilde.x(bs_,bs_,bs_) << std::endl;
    RU_tilde.Update_Ghosts();
-
+   //if (pc_->IsRoot()) std::cout << "RU_tilde(0,0,0): "<< RU_tilde.x(bs_,bs_,bs_) << std::endl;
+   
 
 
 }
@@ -695,8 +717,7 @@ void grid::V_Source(double T)
 		S2.x(I,J,K) = Vector_Source_x(X-size_->dx()/2.,Y,Z,T);
                 S2.y(I,J,K) = Vector_Source_y(X,Y-size_->dy()/2.,Z,T);
                 S2.z(I,J,K) = Vector_Source_z(X,Y,Z-size_->dz()/2.,T);
-		//S1(I,J,K)=param_->A_g()*cos(param_->K_g()*X) + param_->B_g()*sin(param_->K_g()*X);//user can manually change this function to the desired one
-            }
+		}
     S2.Update_Ghosts();
     
     
@@ -708,9 +729,7 @@ void grid::Update_RV_WOQ()
    //interpolation
   V.Equal_Divide(RV_int,Rho_forV); //comupte v_int at faces (note: Rho_face is already computed from previous sub-step @ Compute_RHS_Pois)
   //divergence.Equal_Div_F2C(V); //Divergence of v_int stored at cell center   Note: V at cell faces is already computed @Update_particle
-  //dummy2.Equal_Grad_C2F(divergence); // d/dx_i div(v)
   dummy.Equal_Del2(V); //compute div(grad(v_i)) and store it in the dummy variable
-  //RHS_RV.Equal_LinComb(param_->eta0()/3.,dummy2,param_->eta0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
   RHS_RV.Equal_Mult(param_->eta0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
   //convection in x direction:
   dummy.Equal_I_C2F(RV_int.x); //interpolate u to neighbour edges //Note:even though U&RU are stored on cell faces we use C2F interpolation here, should be careful!
@@ -790,8 +809,7 @@ void grid::C_Source(double T)
                 Y=size_->dy()/2.+j*size_->dy();
                 Z=size_->dz()/2.+k*size_->dz();
                 S1(I,J,K) = Scalar_Source(X,Y,X,T);
-		//S1(I,J,K)=param_->A_g()*cos(param_->K_g()*X) + param_->B_g()*sin(param_->K_g()*X);//user can manually change this function to the desired one
-            }
+		}
     S1.Update_Ghosts();
         
 }
@@ -1144,7 +1162,7 @@ void grid::Write_info()
 
 
 
-void grid::open_stat_file(char *name,std::ofstream &file)
+void grid::open_stat_file(const char *name,std::ofstream &file)
 {
   std::string s(name);
   std::ostringstream filename_out_Data;
