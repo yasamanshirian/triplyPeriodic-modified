@@ -25,6 +25,7 @@ grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s
   RK4_postCoeff[2]=1./3.;
   RK4_postCoeff[3]=1./6.;
   Is_touch_=0;
+  //information about the portion of cells belong to this processor for filtering
   in_ilo=size_->il();
   in_ihi=size_->ih();
   in_jlo=size_->jl();
@@ -41,11 +42,11 @@ grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s
   nbuff_fft = (in_ihi-in_ilo)*(in_jhi-in_jlo)*(in_khi-in_klo);
   plan_kernel=fft_3d_create_plan(MPI_COMM_WORLD,size_->Nx_tot(),size_->Ny_tot(),size_->Nz_tot(),in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&nbuff_fft);
   plan=fft_3d_create_plan(MPI_COMM_WORLD,size_->Nx_tot(),size_->Ny_tot(),size_->Nz_tot(),in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&nbuff_fft);
-  
+  //dynamic memory allocation for filtered tensor
   RU_fft.x = new FFT_DATA[nbuff_fft];
   RU_fft.y = new FFT_DATA[nbuff_fft];
   RU_fft.z = new FFT_DATA[nbuff_fft];
-  std::cout <<"allocated memory for RU_fft" << std::endl;       
+  //std::cout <<"allocated memory for RU_fft" << std::endl;       
   kernel_fft =new FFT_DATA[nbuff_fft];
   //RU_fft =new FFT_DATA[nbuff_fft];
     
@@ -572,8 +573,9 @@ void grid::TimeAdvance()
 void grid::ConstructKernel()
 {
   
-  
+  //number of kernel cells
   ker_Ncells = int(param_->kernel_size()/size_->dx());
+  //number of points involved, we always have odd number of points involved.
   ker_Np = ker_Ncells;
   if (ker_Ncells % 2 == 0) ker_Np = ker_Ncells + 1;
   
@@ -585,6 +587,7 @@ void grid::ConstructKernel()
 
   int count;
   count=0;
+  //physical values of the kernel, uniform if ker_Ncells is even, and if it's odd, two boundary cells have half value
   for (int k=in_klo;k<=in_khi;k++)
     for (int j=in_jlo;j<=in_jhi;j++)
       for (int i=in_ilo;i<=in_ihi;i++)
@@ -676,7 +679,7 @@ void grid::FilterVelocity()
   
   RU_tilde=RU_int;
   //if (pc_->IsRoot()) std::cout << "RU(0,0,0): "<< RU_tilde.x(bs_,bs_,bs_) << std::endl;
-   
+  //dividing the filtered velocity by the total number of mesh points to have isometric fourier transform.  
   int tot = size_->size_tot();
    for (int k=in_klo;k<=in_khi;k++)
      for (int j=in_jlo;j<=in_jhi;j++)

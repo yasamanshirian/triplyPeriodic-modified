@@ -26,15 +26,13 @@ class grid
   double RK4_preCoeff[4];
   double RK4_postCoeff[4];
   double mean_energy_transferred;
-  int nbuff_fft;
-  int ker_Ncells;
-  int ker_Np;
+  int nbuff_fft;//memory for 1D fft array
+  int ker_Ncells; //number of filter kernel cells
+  int ker_Np; // number of point involved in filter kernel
   int in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi; 
   int bs_;
   FFT_DATA *kernel_fft;
-  //data_fft kernel_fft;
   tensor_fft RU_fft;
-  //FFT_DATA *RU_fft;
   fft_plan_3d *plan; 
   fft_plan_3d *plan_kernel;
   std::fstream touch_check;
@@ -46,7 +44,6 @@ class grid
   std::ofstream stat_TKE_U;
   std::ofstream stat_TKE_V;
   std::ofstream stat_TKE_W;
-  //std::ofstream stat_VV;
   std::ofstream stat_TKEV_V1;
   std::ofstream stat_TKEV_V2;
   std::ofstream stat_TKEV_V3;
@@ -55,9 +52,6 @@ class grid
   std::ofstream stat_CMax;
   std::ofstream stat_CMin;
   std::ofstream stat_CMean;
-  //std::ofstream stat_RhoMax;
-  //std::ofstream stat_RhoMin;
-  //std::ofstream stat_RhoMean;
   std::ofstream stat_ParticleMaxCFL;
   std::ofstream stat_GasMaxCFL;
   std::ofstream stat_GasMaxDiffCFL;
