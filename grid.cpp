@@ -125,7 +125,7 @@ bool grid::Touch()
     }
   MPI_Bcast(&ans,1,MPI_INT,0,MPI_COMM_WORLD);
   Is_touch_=ans;
-  if (pc_->IsRoot()) std::cout << "Inside touch before Store() " << std::endl;
+  //if (pc_->IsRoot()) std::cout << "Inside touch before Store() " << std::endl;
   Store();
   return ans;
 }
@@ -660,16 +660,14 @@ void grid::FilterVelocity()
     for (int j=in_jlo;j<=in_jhi;j++)
       for (int i=in_ilo;i<=in_ihi;i++)
         {
-          RU_fft.x[count].im=RU_fft.x[count].im*kernel_fft[count].im + RU_fft.x[count].re*kernel_fft[count].im + RU_fft.x[count].im*kernel_fft[count].re;
-	  RU_fft.x[count].re=RU_fft.x[count].re*kernel_fft[count].re;
+          RU_fft.x[count].im = RU_fft.x[count].re*kernel_fft[count].im + RU_fft.x[count].im*kernel_fft[count].re;
+	  RU_fft.x[count].re = -RU_fft.x[count].im*kernel_fft[count].im + RU_fft.x[count].re*kernel_fft[count].re;
           
-	  RU_fft.y[count].im=RU_fft.y[count].im*kernel_fft[count].im + RU_fft.y[count].re*kernel_fft[count].im + RU_fft.y[count].im*kernel_fft[count].re;
-	
-          RU_fft.y[count].re=RU_fft.y[count].re*kernel_fft[count].re;
+	  RU_fft.y[count].im = RU_fft.y[count].re*kernel_fft[count].im + RU_fft.y[count].im*kernel_fft[count].re;
+          RU_fft.y[count].re = -RU_fft.y[count].im*kernel_fft[count].im + RU_fft.y[count].re*kernel_fft[count].re;
           
-	  RU_fft.z[count].im=RU_fft.z[count].im*kernel_fft[count].im+ RU_fft.z[count].re*kernel_fft[count].im + RU_fft.z[count].im*kernel_fft[count].re;
-	;
-          RU_fft.z[count].re=RU_fft.z[count].re*kernel_fft[count].re;
+	  RU_fft.z[count].im = RU_fft.z[count].re*kernel_fft[count].im + RU_fft.z[count].im*kernel_fft[count].re;
+          RU_fft.z[count].re = -RU_fft.z[count].im*kernel_fft[count].im + RU_fft.z[count].re*kernel_fft[count].re;
           count++;
           
 	}
