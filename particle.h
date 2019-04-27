@@ -53,10 +53,10 @@ class particle
   void Send_Recv_X();
   void Send_Recv_Y();
   void Send_Recv_Z();
-  void Store(char*,int,double*); //store a vecotr of doubles
-  void Store(char*,int,int*); //store a vecotr of ints
-  void Load(char*,double*); //load a vecotr of doubles from restart files
-  void Load(char*,int*); //load a vecotr of ints from restart file
+  void Store(const char*,int,double*); //store a vecotr of doubles
+  void Store(const char*,int,int*); //store a vecotr of ints
+  void Load(const char*,double*); //load a vecotr of doubles from restart files
+  void Load(const char*,int*); //load a vecotr of ints from restart file
  public:
   int Np; //number of valid particles in this process
   //global coordinate

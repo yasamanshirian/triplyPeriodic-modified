@@ -870,7 +870,7 @@ void particle::Store_All(int num_ts)
   Store("Part_flag",num_ts,&flag[0]);
 }
 
-void particle::Store(char *name,int num_ts,double *p)
+void particle::Store(const char *name,int num_ts,double *p)
 {
   std::string s(name);
   std::ostringstream filename_out_Data;
@@ -883,7 +883,7 @@ void particle::Store(char *name,int num_ts,double *p)
   MPI_File_close(&Myfile);
 }
 
-void particle::Store(char *name,int num_ts,int *p)
+void particle::Store(const char *name,int num_ts,int *p)
 {
   std::string s(name);
   std::ostringstream filename_out_Data;
@@ -962,7 +962,7 @@ void particle::Load_All()
     Send_Recv();
 }
 
-void particle::Load(char *name,double *p)
+void particle::Load(const char *name,double *p)
 {
   std::string s(name);
   std::ostringstream filename_out_Data;
@@ -975,7 +975,7 @@ void particle::Load(char *name,double *p)
   MPI_File_close(&Myfile);
 }
 
-void particle::Load(char *name,int *p)
+void particle::Load(const char *name,int *p)
 {
   std::string s(name);
   std::ostringstream filename_out_Data;

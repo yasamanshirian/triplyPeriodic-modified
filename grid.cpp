@@ -168,7 +168,7 @@ void grid::Initialize()
 	    }
       RU.Update_Ghosts();
       Rho=param_->Rho0();
-      part.load_random();
+      //part.load_random();
       P=0;
       P0=param_->P0();
       T_cur=0;
@@ -195,7 +195,7 @@ void grid::Initialize()
 	    }
       RU.Update_Ghosts();
       Rho=param_->Rho0();
-      part.load_random();
+      //part.load_random();
       P=0;
       P0=param_->P0();
       T_cur=0;
@@ -222,7 +222,7 @@ void grid::Initialize()
 	    }
       RU.Update_Ghosts();
       Rho=param_->Rho0();
-      part.load_random();
+      //part.load_random();
       P=0;
       P0=param_->P0();
       T_cur=0;
@@ -233,7 +233,7 @@ void grid::Initialize()
     {
       RU=0;
       Rho=param_->Rho0();
-      part.load_random();
+      //part.load_random();
       P=0;
       P0=param_->P0();
       T_cur=0;
@@ -266,7 +266,7 @@ void grid::Initialize()
       RU*=param_->Rho0();
       Rho=param_->Rho0();
       P=0;
-      part.load_random();
+      //part.load_random();
       P0=param_->P0();
       T_cur=0;
       num_timestep=0;
@@ -575,6 +575,7 @@ void grid::ConstructKernel()
   
   //number of kernel cells
   ker_Ncells = int(param_->kernel_size()/size_->dx());
+  //std::cout << "number of cells : "<< ker_Ncells << std::endl;
   //number of points involved, we always have odd number of points involved.
   ker_Np = ker_Ncells;
   if (ker_Ncells % 2 == 0) ker_Np = ker_Ncells + 1;
@@ -619,6 +620,8 @@ void grid::ConstructKernel()
         {
 	
 	std::cout << "kernel("<< i<< ","<< j<< "," << k << ")="<< kernel_fft[count].re <<std::endl;
+        std::cout << "U("<< i<< ","<< j<< "," << k << ")="<< RU_int.x(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_) <<std::endl;
+
 
 	count++;
    	} 
@@ -635,9 +638,9 @@ void grid::FilterVelocity()
  
   int count=0;
   for (int k=in_klo;k<=in_khi;k++)
-    	for (int j=in_jlo;j<=out_jhi;j++)
-      		for (int i=in_ilo;i<=out_ihi;i++)
-        {
+    for (int j=in_jlo;j<=out_jhi;j++)
+      for (int i=in_ilo;i<=out_ihi;i++)
+         {
           RU_fft.x[count].im=0;
           RU_fft.x[count].re=RU_int.x(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_);
 	  
@@ -647,7 +650,7 @@ void grid::FilterVelocity()
           RU_fft.z[count].im=0;
           RU_fft.z[count++].re=RU_int.z(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_);
 	  
-        }
+         }
   
   fft_3d(RU_fft.x,RU_fft.x,1,plan);
   fft_3d(RU_fft.y,RU_fft.y,1,plan);
@@ -657,13 +660,15 @@ void grid::FilterVelocity()
     for (int j=in_jlo;j<=in_jhi;j++)
       for (int i=in_ilo;i<=in_ihi;i++)
         {
-          RU_fft.x[count].im=RU_fft.x[count].im*kernel_fft[count].im;
+          RU_fft.x[count].im=RU_fft.x[count].im*kernel_fft[count].im + RU_fft.x[count].re*kernel_fft[count].im + RU_fft.x[count].im*kernel_fft[count].re;
 	  RU_fft.x[count].re=RU_fft.x[count].re*kernel_fft[count].re;
           
-	  RU_fft.y[count].im=RU_fft.y[count].im*kernel_fft[count].im;
+	  RU_fft.y[count].im=RU_fft.y[count].im*kernel_fft[count].im + RU_fft.y[count].re*kernel_fft[count].im + RU_fft.y[count].im*kernel_fft[count].re;
+	
           RU_fft.y[count].re=RU_fft.y[count].re*kernel_fft[count].re;
           
-	  RU_fft.z[count].im=RU_fft.z[count].im*kernel_fft[count].im;
+	  RU_fft.z[count].im=RU_fft.z[count].im*kernel_fft[count].im+ RU_fft.z[count].re*kernel_fft[count].im + RU_fft.z[count].im*kernel_fft[count].re;
+	;
           RU_fft.z[count].re=RU_fft.z[count].re*kernel_fft[count].re;
           count++;
           
