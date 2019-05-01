@@ -60,7 +60,7 @@ int main (int argc,char *argv[] )
       //if (PROC.IsRoot()) std::cout << "next RK4 step"<< std::endl;
       for (GRID.RK4_count=0;GRID.RK4_count<4;GRID.RK4_count++)
 	{
-	 if (PARAM.solve_for_scalar())GRID.Update_Passive_Scalar();
+	 if(PARAM.solve_for_scalar()) GRID.Update_Passive_Scalar();
           if (PARAM.solve_for_vector()){
  	  	GRID.Update_RV_WOQ();
 	  	GRID.Compute_RHS_Pois_Q();
@@ -68,12 +68,12 @@ int main (int argc,char *argv[] )
 	  	GRID.Update_RV_WQ();
           }
           if (PARAM.filtering()) GRID.FilterVelocity();
-          //GRID.Update_RU_WOP();
+          GRID.Update_RU_WOP();
 	  
-	  //GRID.Compute_RHS_Pois();
-	  //GRID.Solve_Poisson();
-	  //GRID.Update_RU_WP();
-	  //GRID.TimeAdvance_RK4();
+	  GRID.Compute_RHS_Pois();
+	  GRID.Solve_Poisson();
+	  GRID.Update_RU_WP();
+	  GRID.TimeAdvance_RK4();
 	}
      
       //GRID.RU_np1.make_mean_U0(RhoU_);
