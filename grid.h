@@ -36,9 +36,9 @@ class grid
   fft_plan_3d *plan; 
   fft_plan_3d *plan_kernel;
   std::fstream touch_check;
-  std::ofstream stat_Tg;
-  std::ofstream stat_Tp;
-  std::ofstream stat_HT;
+  //std::ofstream stat_Tg;
+  //std::ofstream stat_Tp;
+  //std::ofstream stat_HT;
   std::ofstream stat_TKE2;
   std::ofstream stat_TKE;
   std::ofstream stat_TKE_U;
@@ -49,21 +49,21 @@ class grid
   std::ofstream stat_TKEV_V3;
   std::ofstream stat_Passive_Scalar_mean;
   std::ofstream stat_P0;
-  std::ofstream stat_CMax;
-  std::ofstream stat_CMin;
-  std::ofstream stat_CMean;
-  std::ofstream stat_ParticleMaxCFL;
+  //std::ofstream stat_CMax;
+  //std::ofstream stat_CMin;
+  //std::ofstream stat_CMean;
+  //std::ofstream stat_ParticleMaxCFL;
   std::ofstream stat_GasMaxCFL;
   std::ofstream stat_GasMaxDiffCFL;
   std::ofstream stat_NumIteration;
-  std::ofstream stat_BalanceIndex;
+  //std::ofstream stat_BalanceIndex;
   bool Is_touch_; //=1 if touch=1 =0 if not
   int sign_fnc(double); //=1 if double>=0 otherwise is -1
   double ABS(double); //=|double|
   void Write_info(); //Wrtie information to info.txt
   void open_stat_file(const char*,std::ofstream&); //open a stat file
  public:
-  particle part; //particle tracking class
+  //particle part; //particle tracking class
   tensor1 RU; //rho*u stored at cell faces
   tensor1 RU_int; //previous RK4 substep value
   tensor1 RU_new; //next RK4 substep value
@@ -102,7 +102,7 @@ class grid
   tensor0 RHS_Passive_Scalar;
   //tensor1 Rho_face; //Gas density stored at cell faces
   tensor1 Passive_Scalar_face;//scalar concentration stored at cell faces
-  tensor0 T; //Gas temperature stored at cell cneter
+  //tensor0 T; //Gas temperature stored at cell cneter
   tensor1 dummy; //dummt array for computations
   tensor1 dummy2; //dummt array for computations
   //tensor0 dummyS; //dummt array for computations on tensor0
@@ -110,10 +110,10 @@ class grid
   tensor0 RHS_Part_Temp; //Interpolated RHS of particle energy equation (due to the algorithm it has to be saved)
   double Rho_forV;
   double P0; // mean thermodynamic pressure
-  double P0_int;
-  double P0_new;
-  double P0_np1;
-  double dP0_dt;    // P0 rate of change
+  //double P0_int;
+  //double P0_new;
+  //double P0_np1;
+  //double dP0_dt;    // P0 rate of change
   double sigma_RHS;   // sum of RHS of Poisson equation over all the domain exept for the P0 rate of change term
   double T_cur;
   int num_timestep;
@@ -143,8 +143,8 @@ class grid
   void Solve_Poisson_Q();
   void Update_RV_WQ();
   void TimeAdvance_RK4();
-  void Test_Poisson();
-  void Update_Particle();
+  //void Test_Poisson();
+  //void Update_Particle();
   void Statistics();
   void CopyBox();//copy box in x direction , multiple times
   bool Touch(); //=0/1 in touch.check (1: exit code now, 0: contunue) this function actually read from file

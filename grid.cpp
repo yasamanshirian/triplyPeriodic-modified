@@ -46,9 +46,9 @@ grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s
   RU_fft.x = new FFT_DATA[nbuff_fft];
   RU_fft.y = new FFT_DATA[nbuff_fft];
   RU_fft.z = new FFT_DATA[nbuff_fft];
-  //std::cout <<"allocated memory for RU_fft" << std::endl;       
+         
   kernel_fft =new FFT_DATA[nbuff_fft];
-  //RU_fft =new FFT_DATA[nbuff_fft];
+  
     
   if (pc->IsRoot())
     {
@@ -57,10 +57,11 @@ grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s
       touch_check.close();
       if (p->Statistics())
 	{
-	  open_stat_file("Tg",stat_Tg);
-	  open_stat_file("Tp",stat_Tp);
-	  open_stat_file("HT",stat_HT);
+	  //open_stat_file("Tg",stat_Tg);
+	  //open_stat_file("Tp",stat_Tp);
+	  //open_stat_file("HT",stat_HT);
 	  open_stat_file("RU",stat_TKE2);
+	  open_stat_file("TKE",stat_TKE);
 	  open_stat_file("TKE_U",stat_TKE_U);
 	  open_stat_file("TKE_V",stat_TKE_V);
 	  open_stat_file("TKE_W",stat_TKE_W);
@@ -69,13 +70,14 @@ grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s
 	  open_stat_file("TKE_V2",stat_TKEV_V2);
 	  open_stat_file("TKE_V3",stat_TKEV_V3);
 	  open_stat_file("P0",stat_P0);
-	  open_stat_file("C_Max",stat_CMax);
-	  open_stat_file("C_Min",stat_CMin);
-	  open_stat_file("C_Mean",stat_CMean);
-	  open_stat_file("Max_CFL_Vp",stat_ParticleMaxCFL);
+	  //open_stat_file("C_Max",stat_CMax);
+	  //open_stat_file("C_Min",stat_CMin);
+	  //open_stat_file("C_Mean",stat_CMean);
+	  //open_stat_file("Max_CFL_Vp",stat_ParticleMaxCFL);
 	  open_stat_file("Max_CFL_U",stat_GasMaxCFL);
+	  open_stat_file("Max_Diff_CFL_U",stat_GasMaxDiffCFL);
 	  open_stat_file("Num_Iteration",stat_NumIteration);
-	  open_stat_file("Balance_Index",stat_BalanceIndex);
+	  //open_stat_file("Balance_Index",stat_BalanceIndex);
 	}
     }
 }
@@ -93,6 +95,7 @@ grid::~grid()
       if (param_->Statistics())
 	{
 	  stat_TKE2.close();
+	  stat_TKE.close();
 	  stat_TKE_U.close();
 	  stat_TKE_V.close();
 	  stat_TKE_W.close();
@@ -101,14 +104,14 @@ grid::~grid()
 	  stat_TKEV_V2.close();
 	  stat_TKEV_V3.close();
 	  stat_P0.close();
-	  stat_CMax.close();
-	  stat_CMin.close();
-	  stat_CMean.close();
-	  stat_ParticleMaxCFL.close();
+	  //stat_CMax.close();
+	  //stat_CMin.close();
+	  //stat_CMean.close();
+	 // stat_ParticleMaxCFL.close();
 	  stat_GasMaxCFL.close();
 	  stat_GasMaxDiffCFL.close();
 	  stat_NumIteration.close();
-	  stat_BalanceIndex.close();
+	  //stat_BalanceIndex.close();
 	}
     }
 }
@@ -225,7 +228,8 @@ void grid::Initialize()
       //part.load_random();
       P=0;
       P0=param_->P0();
-      T_cur=0;
+      if ( param_->solve_for_scalar()){
+      	T_cur=0;
       num_timestep=0;
     }
 
@@ -246,10 +250,13 @@ void grid::Initialize()
       com_->read(RU,"Restart_RU.bin");
       if (pc_->IsRoot()) std::cout<<"*+=*+=*+=*+=RU LOADED*+=*+=*+=*+="<<std::endl;
       Rho = param_->Rho0();
+
       com_->read(P,"Restart_P.bin");  
       if (pc_->IsRoot()) std::cout<<"*+=*+=*+=*+=P LOADED*+=*+=*+=*+="<<std::endl;
-      part.Load_All();
-      if (pc_->IsRoot()) std::cout<<"*+=*+=*+=*+=Particles LOADED*+=*+=*+=*+="<<std::endl;
+
+      //part.Load_All();
+      //if (pc_->IsRoot()) std::cout<<"*+=*+=*+=*+=Particles LOADED*+=*+=*+=*+="<<std::endl;
+      
       std::ifstream numbers("Restart_numbers.dat");
       numbers>>P0;
       numbers>>T_cur;
@@ -352,8 +359,10 @@ void grid::Initialize()
       //These files are initial condition for timestep=num_timestep
       com_->read(RV,"Restart_RV.bin");
       if (pc_->IsRoot()) std::cout<<"*+=*+=*+=*+=RV LOADED*+=*+=*+=*+="<<std::endl;
+      
       com_->read(Q,"Restart_Q.bin");  
       if (pc_->IsRoot()) std::cout<<"*+=*+=*+=*+=Q LOADED*+=*+=*+=*+="<<std::endl;
+      
       Rho_forV=param_->Rho_forV();
       }
 
@@ -436,7 +445,7 @@ void grid::Initialize()
     if (param_->Initial_C()==0)
     {	
     	com_->read(Passive_Scalar,"Passive_Scalar.bin");
-            }
+    }
     
   //prepare variables for time integration loop
   RU_int=RU;
@@ -445,8 +454,8 @@ void grid::Initialize()
   RV_np1=RV;
   Passive_Scalar_int = Passive_Scalar;
   Passive_Scalar_np1 = Passive_Scalar;
-  P0_int=P0;
-  P0_np1=P0;
+  //P0_int=P0;
+  //P0_np1=P0;
   //Need to compute rho at faces once here, after this, Compute_RHS_Pois computes it
   //Need to compute Passive_Scalar at faces once here, after this, Update_Passive_Scalar computes it
   Passive_Scalar_face.Equal_I_C2F(Passive_Scalar);
@@ -498,12 +507,15 @@ void grid::Store()
       std::string filename=filename_out_Data.str();
       com_->write(RU,(char*)(filename.c_str()));
       
-      filename_out_Data.str("");
-      filename_out_Data.clear();
-      filename_out_Data<<param_->data_dir()<<"RV"<<"_"<<num_timestep<<".bin";
-      filename=filename_out_Data.str();
-      com_->write(RV,(char*)(filename.c_str()));
-      if (param_->filtering())
+      if ( param_->solve_for_vector()){
+      	
+       filename_out_Data.str("");
+       filename_out_Data.clear();
+       filename_out_Data<<param_->data_dir()<<"RV"<<"_"<<num_timestep<<".bin";
+       filename=filename_out_Data.str();
+       com_->write(RV,(char*)(filename.c_str()));
+      }
+      /*if (param_->filtering())
       {
 	filename_out_Data.str("");
         filename_out_Data.clear();
@@ -512,12 +524,16 @@ void grid::Store()
         com_->write(RU_tilde,(char*)(filename.c_str()));
       
 
-      }       
-      filename_out_Data.str("");
-      filename_out_Data.clear();
-      filename_out_Data<<param_->data_dir()<<"C"<<"_"<<num_timestep<<".bin";
-      filename=filename_out_Data.str();
-      com_->write(Passive_Scalar,(char*)(filename.c_str()));
+      }*/
+      if ( param_->solve_for_scalar()){
+      	      
+       filename_out_Data.str("");
+       filename_out_Data.clear();
+       filename_out_Data<<param_->data_dir()<<"C"<<"_"<<num_timestep<<".bin";
+       filename=filename_out_Data.str();
+       com_->write(Passive_Scalar,(char*)(filename.c_str()));
+      }
+     
       if (pc_->IsRoot())
 	{
 	  filename_out_Data.str("");
@@ -546,14 +562,17 @@ void grid::Store()
       filename_out_Data<<param_->data_dir()<<"P"<<"_"<<num_timestep<<".bin";
       std::string filename=filename_out_Data.str();
       com_->write(P,(char*)(filename.c_str()));
-      
+     
+     if ( param_->solve_for_vector()){
+      	 
       filename_out_Data.str("");
       filename_out_Data.clear();
       filename_out_Data<<param_->data_dir()<<"Q"<<"_"<<num_timestep<<".bin";
       filename=filename_out_Data.str();
       com_->write(Q,(char*)(filename.c_str()));
       
-      }
+     }
+    }
 }
 
 void grid::TimeAdvance()
@@ -562,9 +581,9 @@ void grid::TimeAdvance()
   Passive_Scalar = Passive_Scalar_np1;
   RU=RU_np1;
   RV=RV_np1;
-  P0=P0_np1;
+  //P0=P0_np1;
  
-  part.x=part.x_np1; part.y=part.y_np1; part.z=part.z_np1; part.u=part.u_np1; part.v=part.v_np1; part.w=part.w_np1; part.T=part.T_np1;
+  //part.x=part.x_np1; part.y=part.y_np1; part.z=part.z_np1; part.u=part.u_np1; part.v=part.v_np1; part.w=part.w_np1; part.T=part.T_np1;
   T_cur+=param_->dt();
   num_timestep++;
 }
@@ -599,7 +618,7 @@ void grid::ConstructKernel()
 		if (j <= (ker_Np -1)/2 || j>=  size_->Ny_tot() - (ker_Np - 1)/2)
 			if (k <= (ker_Np -1)/2 || k>=  size_->Nz_tot() - (ker_Np - 1)/2){
               			kernel_fft[count].re=1./(ker_Ncells*ker_Ncells*ker_Ncells);
-				 if (ker_Ncells % 2 == 0 && ker_Ncells != size_->Nx_tot()){
+				 if (ker_Ncells % 2 == 0){
 					if (i == (ker_Np - 1)/2 || i == size_->Nx_tot() - (ker_Np - 1)/2) kernel_fft[count].re/=2;
 					if (j == (ker_Np - 1)/2 || j == size_->Ny_tot() - (ker_Np - 1)/2) kernel_fft[count].re/=2;
         				if (k == (ker_Np - 1)/2 || k == size_->Nz_tot() - (ker_Np - 1)/2) kernel_fft[count].re/=2;
@@ -883,7 +902,7 @@ void grid::Update_RU_WOP()
   else RU_new = RU_np1;
 }
 
-void grid::Update_P0()
+/*void grid::Update_P0()
 {
   mean_energy_transferred = RHS_Part_Temp.mean(); // RHS_Part_Temp is -(watts from particles to each Eulerian cell )
   if (param_->Is_Cooling()) 
@@ -897,7 +916,7 @@ void grid::Update_P0()
     P0_new = P0+param_->dt()*RK4_preCoeff[RK4_count]*dP0_dt;
   else 
     P0_new=P0_np1;
-}
+}*/
 
 void grid::Compute_RHS_Pois()
 {
@@ -927,17 +946,17 @@ void grid::TimeAdvance_RK4()
 {
   RU_int=RU_new;
   RV_int=RV_new;
-  P0_int=P0_new;
+  //P0_int=P0_new;
   Passive_Scalar_int = Passive_Scalar_new;
-  part.x_int=part.x_new; part.y_int=part.y_new; part.z_int=part.z_new; part.u_int=part.u_new; part.v_int=part.v_new; part.w_int=part.w_new; part.T_int=part.T_new;
+  //part.x_int=part.x_new; part.y_int=part.y_new; part.z_int=part.z_new; part.u_int=part.u_new; part.v_int=part.v_new; part.w_int=part.w_new; part.T_int=part.T_new;
 }
 
 void grid::Statistics()
 {
   if (!param_->Statistics()) return;
-  double C_max=C.max();
-  double C_min=C.min();
-  double C_mean=C.mean();
+  //double C_max=C.max();
+  //double C_min=C.min();
+  //double C_mean=C.mean();
   double TKE2=U.mean_squares();
   double VV=V.mean_squares();
   double Passive_Scalar_mean = Passive_Scalar.mean_squares();
@@ -948,9 +967,9 @@ void grid::Statistics()
   V.Equal_Divide(RV_np1,Rho_forV);
   double Gas_CFL_Max=U.max_cfl(param_->dt());
   double u_max=U.max();
-  double Vp_max=part.max(part.u);
-  double ug_max=part.max(part.ug);
-  double Tp_max=part.max(part.T);
+  //double Vp_max=part.max(part.u);
+  //double ug_max=part.max(part.ug);
+  //double Tp_max=part.max(part.T);
   U*=RU_np1;
   V*=RV_np1;
   TKE_U=U.x.mean();
@@ -962,16 +981,16 @@ void grid::Statistics()
   TKEV_V3=V.z.mean();
   TKEV=TKEV_V1+TKEV_V2+TKEV_V3;
   double Gas_Max_Diff_CFL = param_->dt() / ( size_->dx() * size_->dx() * Rho / param_->Mu0()) * 6.; //when dx=dy=dz
-  double Load_Balance=part.Balance_Index();
-  part.trajectory(T_cur); //store particle trajectory
-  double Tp_mean = part.mean(part.T);
-  double HT_mean = mean_energy_transferred;
+  //double Load_Balance=part.Balance_Index();
+  //part.trajectory(T_cur); //store particle trajectory
+  //double Tp_mean = part.mean(part.T);
+  //double HT_mean = mean_energy_transferred;
   dummy.x = P0/param_->R()/Rho;
-  double Tg_mean = dummy.x.mean();
+  //double Tg_mean = dummy.x.mean();
   if (!pc_->IsRoot()) return;
-  stat_Tg<<T_cur<<" "<<Tg_mean<<std::endl;
-  stat_Tp<<T_cur<<" "<<Tp_mean<<std::endl;
-  stat_HT<<T_cur<<" "<<HT_mean<<std::endl;
+  //stat_Tg<<T_cur<<" "<<Tg_mean<<std::endl;
+  //stat_Tp<<T_cur<<" "<<Tp_mean<<std::endl;
+  //stat_HT<<T_cur<<" "<<HT_mean<<std::endl;
   stat_TKE2<<T_cur<<" "<<TKE2<<std::endl;
   stat_TKE<<T_cur<<" "<<TKE<<std::endl;
   stat_TKE_U<<T_cur<<" "<<TKE_U<<std::endl;
@@ -982,26 +1001,25 @@ void grid::Statistics()
   stat_TKEV_V2<<T_cur<<" "<<TKEV_V2<<std::endl;
   stat_TKEV_V3<<T_cur<<" "<<TKEV_V3<<std::endl;
   stat_P0<<T_cur<<" "<<P0<<std::endl;
-  stat_CMax<<T_cur<<" "<<C_max<<std::endl;
-  stat_CMin<<T_cur<<" "<<C_min<<std::endl;
-  stat_CMean<<T_cur<<" "<<C_mean<<std::endl;
-  stat_ParticleMaxCFL<<T_cur<<" "<<Particle_CFL_Max<<std::endl;    
+  //stat_CMax<<T_cur<<" "<<C_max<<std::endl;
+  //stat_CMin<<T_cur<<" "<<C_min<<std::endl;
+  //stat_CMean<<T_cur<<" "<<C_mean<<std::endl;
+  //stat_ParticleMaxCFL<<T_cur<<" "<<Particle_CFL_Max<<std::endl;    
   stat_GasMaxCFL<<T_cur<<" "<<Gas_CFL_Max<<std::endl;    
   stat_GasMaxDiffCFL<<T_cur<<" "<<Gas_Max_Diff_CFL<<std::endl;
   stat_NumIteration<<T_cur<<" "<<PS_.num_iteration()<<std::endl;
-  stat_BalanceIndex<<T_cur<<" "<<Load_Balance<<std::endl;
+  //stat_BalanceIndex<<T_cur<<" "<<Load_Balance<<std::endl;
   if (!param_->Stat_print()) return;
   std::cout<<std::endl<<"::::::::::TIME="<<T_cur<<"::::::::::STEP="<<num_timestep<<"::::::::::"<<std::endl;
- std::cout<<"*** C_min="<<C_min<<"  ,  C_max="<<C_max<<"  ,  C_mean="<<C_mean<<std::endl;
-  std::cout<<"*** Particle Maximum CFL="<<Particle_CFL_Max<<"  ,  Gas Maximum CFL="<<Gas_CFL_Max<<"  ,  Gas Maximum diffusive CFL="<<Gas_Max_Diff_CFL<<std::endl;
+  //std::cout<<"*** C_min="<<C_min<<"  ,  C_max="<<C_max<<"  ,  C_mean="<<C_mean<<std::endl;
+  /*std::cout<<"*** Particle Maximum CFL="<<Particle_CFL_Max<<*/"  ,  Gas Maximum CFL="<<Gas_CFL_Max<<"  ,  Gas Maximum diffusive CFL="<<Gas_Max_Diff_CFL<<std::endl;
   std::cout<<"*** P0="<<P0<<"   ,   Number of Poisson solve iterations="<<PS_.num_iteration()<<std::endl;
   std::cout<<"*** Twice TKE_U ="<<TKE_U<<"  ,  TKE_V ="<<TKE_V<<"  ,  TKE_W ="<<TKE_W<<"  , Twice TKE ="<<TKE<<"  , Twice TKE2="<<TKE2<<std::endl;
   std::cout<<"*** Passive_Scalar_mean ="<<Passive_Scalar_mean<<std::endl;
   std::cout<<"*** Twice TKEV_V1 ="<<TKEV_V1<<"  ,  TKEV_V2 ="<<TKEV_V2<<"  ,  TKEV_V3 ="<<TKEV_V3<<"  , Twice TKEV ="<<TKEV<<"  , Twice VV="<<VV<<std::endl;
-  std::cout<<"*** Particle u_max="<<Vp_max<<"  ,  Gas interpolated u_max="<<ug_max<<"  ,  Gas u_max="<<u_max<<std::endl;
-  std::cout<<"Mean energy transferred from particle to gas="<<-mean_energy_transferred<<"  ,  Balance_Index="<<Load_Balance<<std::endl;
-  
-  std::cout<<"*** Particle Tmax ="<<Tp_max<<std::endl;
+  /*std::cout<<"*** Particle u_max="<<Vp_max<<*/"  ,  Gas interpolated u_max="<<ug_max<<"  ,  Gas u_max="<<u_max<<std::endl;
+  //std::cout<<"Mean energy transferred from particle to gas="<<-mean_energy_transferred<<"  ,  Balance_Index="<<Load_Balance<<std::endl;
+  //std::cout<<"*** Particle Tmax ="<<Tp_max<<std::endl;
  
 }
 
