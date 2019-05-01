@@ -1,0 +1,9 @@
+*.log
+log.*
+*.slurm
+Box*
+*.bin
+*.o
+*.pbs
+*.out
+restart/**
