@@ -32,7 +32,7 @@ class grid
   int in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi; 
   int bs_;
   FFT_DATA *kernel_fft;
-  tensor_fft RU_fft;
+  tensor_fft U_fft;
   fft_plan_3d *plan; 
   fft_plan_3d *plan_kernel;
   std::fstream touch_check;
@@ -70,22 +70,28 @@ class grid
   tensor1 RU_np1; //next timestep value
   tensor1 RU_WP; //momentum with pressure gradient effect (should match the divergence condition)
   tensor1 RHS_RU;
-  tensor1 U; //u stored at cell center
-  tensor1 RU_tilde;
+  tensor1 U; //u stored at cell face
+  tensor1 U_tilde;
   //tensor1 UC; //concentration *u stored at cell faces
   tensor1 RV; //rho*u stored at cell faces
   tensor1 RV_int; //previous RK4 substep value
   tensor1 RV_new; //next RK4 substep value
   tensor1 RV_np1; //next timestep value
+  tensor1 RV_LES; //rho*u stored at cell faces
+  tensor1 RV_LES_int; //previous RK4 substep value
+  tensor1 RV_LES_new; //next RK4 substep value
+  tensor1 RV_LES_np1; //next timestep value
   tensor1 RV_WQ; //momentum with pressure gradient effect (should match the divergence condition)
   tensor1 RHS_RV;
   tensor1 V; //u stored at cell center
+  tensor1 V_LES; // v from filtered velocity background 
   tensor0 P; //pressure stored at cell center
   tensor0 dP; //pressure delta form (used in Poisson equation) stored at cell center
   tensor0 Q;
   tensor0 dQ;
   tensor0 RHS_Pois; //one part of RHS of Poisson equation
   tensor0 RHS_Pois_Q;
+  tensor0 RHS_Pois_Q_LES;
   tensor0 C; //particle concentration stored at cell center
   tensor0 Passive_Scalar; //scalar concentration stored at cell center
   tensor0 S1;//source function in scalar momentum equation
@@ -130,8 +136,8 @@ class grid
   void Update_Passive_Scalar();
   void C_Source(double);
   void Update_RU_WOP();
-  void Update_P0();
-  void Compute_Div_U_new();
+  //void Update_P0();
+  //void Compute_Div_U_new();
   void Compute_RHS_Pois();
   void Solve_Poisson();
   void Update_RU_WP();
@@ -142,6 +148,12 @@ class grid
   void Compute_RHS_Pois_Q();
   void Solve_Poisson_Q();
   void Update_RV_WQ();
+  
+  void Update_RV_LES_WOQ();
+  void Compute_RHS_Pois_Q_LES();
+  void Solve_Poisson_Q_LES();
+  void Update_RV_LES_WQ();
+  
   void TimeAdvance_RK4();
   //void Test_Poisson();
   //void Update_Particle();

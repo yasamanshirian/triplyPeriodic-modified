@@ -11,7 +11,7 @@
 #include "scalar_source.h"
 #include "vector_source.h"
 
-grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),RU_tilde(s,com),RV(s,com),RV_int(s,com),RV_new(s,com),RV_np1(s,com),Passive_Scalar_int(s,com),Passive_Scalar_new(s,com),Passive_Scalar_np1(s,com),Passive_Scalar_face(s,com),Passive_Scalar(s,com),RHS_Passive_Scalar(s,com), S1(s,com), S2(s,com), RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),RV_WQ(s,com),RHS_RV(s,com),V(s,com),Q(s,com),RHS_Pois_Q(s,com),C(s,com), T(s,com),dummy(s,com),dummy2(s,com),divergence(s,com),RHS_Part_Temp(s,com),PS_(p,pc,s,com),part(p,pc,s){
+grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),U_tilde(s,com),RV(s,com),RV_int(s,com),RV_new(s,com),RV_np1(s,com),RV_LES(s,com),RV_LES_int(s,com),RV_LES_new(s,com),RV_LES_np1(s,com),Passive_Scalar_int(s,com),Passive_Scalar_new(s,com),Passive_Scalar_np1(s,com),Passive_Scalar_face(s,com),Passive_Scalar(s,com),RHS_Passive_Scalar(s,com), S1(s,com), S2(s,com), RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),RHS_RV(s,com),V(s,com),V_LES(s,com), Q(s,com),RHS_Pois_Q(s,com),RHS_Pois_Q_LES(s,com),C(s,com),dummy(s,com),dummy2(s,com),PS_(p,pc,s,com){
   size_=s;
   param_=p;
   pc_=pc;
@@ -43,9 +43,9 @@ grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s
   plan_kernel=fft_3d_create_plan(MPI_COMM_WORLD,size_->Nx_tot(),size_->Ny_tot(),size_->Nz_tot(),in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&nbuff_fft);
   plan=fft_3d_create_plan(MPI_COMM_WORLD,size_->Nx_tot(),size_->Ny_tot(),size_->Nz_tot(),in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&nbuff_fft);
   //dynamic memory allocation for filtered tensor
-  RU_fft.x = new FFT_DATA[nbuff_fft];
-  RU_fft.y = new FFT_DATA[nbuff_fft];
-  RU_fft.z = new FFT_DATA[nbuff_fft];
+  U_fft.x = new FFT_DATA[nbuff_fft];
+  U_fft.y = new FFT_DATA[nbuff_fft];
+  U_fft.z = new FFT_DATA[nbuff_fft];
          
   kernel_fft =new FFT_DATA[nbuff_fft];
   
@@ -85,9 +85,9 @@ grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s
 grid::~grid()
 {
   
-  delete[] RU_fft.x;
-  delete[] RU_fft.y;
-  delete[] RU_fft.z;
+  delete[] U_fft.x;
+  delete[] U_fft.y;
+  delete[] U_fft.z;
   delete[] kernel_fft;
   
   if (pc_->IsRoot())
@@ -228,8 +228,7 @@ void grid::Initialize()
       //part.load_random();
       P=0;
       P0=param_->P0();
-      if ( param_->solve_for_scalar()){
-      	T_cur=0;
+      T_cur=0;
       num_timestep=0;
     }
 
@@ -452,6 +451,8 @@ void grid::Initialize()
   RU_np1=RU;
   RV_int=RV;
   RV_np1=RV;
+  RV_LES_np1=RV;
+  RV_LES_int=RV;
   Passive_Scalar_int = Passive_Scalar;
   Passive_Scalar_np1 = Passive_Scalar;
   //P0_int=P0;
@@ -557,7 +558,7 @@ void grid::Store()
   // LESS FREQUENT DATA STORING
   if ((num_timestep%param_->data_freq_slow()==0)||(Is_touch_))
     {
-      part.Store_All(num_timestep);
+      //part.Store_All(num_timestep);
       std::ostringstream filename_out_Data;
       filename_out_Data<<param_->data_dir()<<"P"<<"_"<<num_timestep<<".bin";
       std::string filename=filename_out_Data.str();
@@ -581,6 +582,7 @@ void grid::TimeAdvance()
   Passive_Scalar = Passive_Scalar_np1;
   RU=RU_np1;
   RV=RV_np1;
+  RV_LES = RV_LES_np1;
   //P0=P0_np1;
  
   //part.x=part.x_np1; part.y=part.y_np1; part.z=part.z_np1; part.u=part.u_np1; part.v=part.v_np1; part.w=part.w_np1; part.T=part.T_np1;
@@ -654,52 +656,53 @@ void grid::ConstructKernel()
 void grid::FilterVelocity()
 {
    
+  //U.Equal_Divide(RU_int,Rho);
  
   int count=0;
   for (int k=in_klo;k<=in_khi;k++)
     for (int j=in_jlo;j<=out_jhi;j++)
       for (int i=in_ilo;i<=out_ihi;i++)
          {
-          RU_fft.x[count].im=0;
-          RU_fft.x[count].re=RU_int.x(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_);
+          U_fft.x[count].im=0;
+          U_fft.x[count].re=U.x(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_);
 	  
-          RU_fft.y[count].im=0;
-          RU_fft.y[count].re=RU_int.y(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_);
+          U_fft.y[count].im=0;
+          U_fft.y[count].re=U.y(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_);
 	  
-          RU_fft.z[count].im=0;
-          RU_fft.z[count++].re=RU_int.z(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_);
+          U_fft.z[count].im=0;
+          U_fft.z[count++].re=U.z(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_);
 	  
          }
   
-  fft_3d(RU_fft.x,RU_fft.x,1,plan);
-  fft_3d(RU_fft.y,RU_fft.y,1,plan);
-  fft_3d(RU_fft.z,RU_fft.z,1,plan);
+  fft_3d(U_fft.x,U_fft.x,1,plan);
+  fft_3d(U_fft.y,U_fft.y,1,plan);
+  fft_3d(U_fft.z,U_fft.z,1,plan);
   count=0;
   for (int k=in_klo;k<=in_khi;k++)
     for (int j=in_jlo;j<=in_jhi;j++)
       for (int i=in_ilo;i<=in_ihi;i++)
         {
-          RU_fft.x[count].im = RU_fft.x[count].re*kernel_fft[count].im + RU_fft.x[count].im*kernel_fft[count].re;
-	  RU_fft.x[count].re = -RU_fft.x[count].im*kernel_fft[count].im + RU_fft.x[count].re*kernel_fft[count].re;
+          U_fft.x[count].im = U_fft.x[count].re*kernel_fft[count].im + U_fft.x[count].im*kernel_fft[count].re;
+	  U_fft.x[count].re = -U_fft.x[count].im*kernel_fft[count].im + U_fft.x[count].re*kernel_fft[count].re;
           
-	  RU_fft.y[count].im = RU_fft.y[count].re*kernel_fft[count].im + RU_fft.y[count].im*kernel_fft[count].re;
-          RU_fft.y[count].re = -RU_fft.y[count].im*kernel_fft[count].im + RU_fft.y[count].re*kernel_fft[count].re;
+	  U_fft.y[count].im = U_fft.y[count].re*kernel_fft[count].im + U_fft.y[count].im*kernel_fft[count].re;
+          U_fft.y[count].re = -U_fft.y[count].im*kernel_fft[count].im + U_fft.y[count].re*kernel_fft[count].re;
           
-	  RU_fft.z[count].im = RU_fft.z[count].re*kernel_fft[count].im + RU_fft.z[count].im*kernel_fft[count].re;
-          RU_fft.z[count].re = -RU_fft.z[count].im*kernel_fft[count].im + RU_fft.z[count].re*kernel_fft[count].re;
+	  U_fft.z[count].im = U_fft.z[count].re*kernel_fft[count].im + U_fft.z[count].im*kernel_fft[count].re;
+          U_fft.z[count].re = -U_fft.z[count].im*kernel_fft[count].im + U_fft.z[count].re*kernel_fft[count].re;
           count++;
           
 	}
   //IFT
-  fft_3d(RU_fft.x,RU_fft.x,-1,plan);
-  fft_3d(RU_fft.y,RU_fft.y,-1,plan);
-  fft_3d(RU_fft.z,RU_fft.z,-1,plan);
+  fft_3d(U_fft.x,U_fft.x,-1,plan);
+  fft_3d(U_fft.y,U_fft.y,-1,plan);
+  fft_3d(U_fft.z,U_fft.z,-1,plan);
 
 
 
   count=0;
   
-  RU_tilde=RU_int;
+  //RU_tilde=RU_int;
   //if (pc_->IsRoot()) std::cout << "RU(0,0,0): "<< RU_tilde.x(bs_,bs_,bs_) << std::endl;
   //dividing the filtered velocity by the total number of mesh points to have isometric fourier transform.  
   int tot = size_->size_tot();
@@ -708,18 +711,18 @@ void grid::FilterVelocity()
        for (int i=in_ilo;i<=in_ihi;i++)
          {
          
-           RU_tilde.x(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_)=RU_fft.x[count].re/(tot);
-           RU_tilde.y(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_)=RU_fft.y[count].re/(tot);
-           RU_tilde.z(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_)=RU_fft.z[count++].re/(tot);
+           U_tilde.x(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_)=U_fft.x[count].re/(tot);
+           U_tilde.y(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_)=U_fft.y[count].re/(tot);
+           U_tilde.z(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_)=U_fft.z[count++].re/(tot);
            
 
 
 	 }
   
 
-   RU_tilde.Update_Ghosts();
+   U_tilde.Update_Ghosts();
    //if (pc_->IsRoot()) std::cout << "RU_tilde(0,0,0): "<< RU_tilde.x(bs_,bs_,bs_) << std::endl;
-   
+   //U_tilde.Equal_Divide(RU_tilde,Rho);
 
 
 }
@@ -817,6 +820,75 @@ void grid::Update_RV_WQ()
   else RV_new=RV_np1;
 }
 
+void grid::Update_RV_LES_WOQ()
+{
+     
+   //interpolation
+  V_LES.Equal_Divide(RV_LES_int,Rho); //comupte v_int at faces (note: Rho_face is already computed from previous sub-step @ Compute_RHS_Pois)
+  //divergence.Equal_Div_F2C(V); //Divergence of v_int stored at cell center   Note: V at cell faces is already computed @Update_particle
+  dummy.Equal_Del2(V_LES); //compute div(grad(v_i)) and store it in the dummy variable
+  RHS_RV.Equal_Mult(param_->eta0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
+  //convection in x direction:
+  dummy.Equal_I_C2F(RV_LES_int.x); //interpolate u to neighbour edges //Note:even though U&RU are stored on cell faces we use C2F interpolation here, should be careful!
+  dummy2.Equal_Ix_C2F(U_tilde); //interpolate RU in x direction (note : U_tilde is already computed in @FilterVelocity)
+  dummy *= dummy2;
+  dummy2.x.Equal_Div_F2C(dummy);
+  RHS_RV.x -= dummy2.x;
+  //convection in y direction:
+  dummy.Equal_I_C2F(RV_LES_int.y); //interpolate u to neighbour edges
+  dummy2.Equal_Iy_C2F(U_tilde); //interpolate RU in y direction
+  dummy *= dummy2;
+  dummy2.y.Equal_Div_F2C(dummy);
+  RHS_RV.y -= dummy2.y;
+  //convection in z direction:
+  dummy.Equal_I_C2F(RV_LES_int.z); //interpolate u to neighbour edges
+  dummy2.Equal_Iz_C2F(U_tilde); //interpolate RU in z direction
+  dummy *= dummy2;
+  dummy2.z.Equal_Div_F2C(dummy);
+  RHS_RV.z -= dummy2.z;
+  //Add artificial force
+  if(!param_->S2_type()){
+	grid::V_Source(T_cur);
+	S2.x -= S2.x.mean();
+	S2.y -= S2.y.mean();
+	S2.z -= S2.z.mean();
+	RHS_RV+=S2;
+  }
+  else{
+      //dummy.x.Equal_Divide(RU_tilde.x,Rho);
+      dummy.x.Equal_Iy_C2F(U_tilde.x);
+      RHS_RV.y.PlusEqual_Mult(-1,dummy.x);	
+	
+  }
+  
+  RV_LES_np1.PlusEqual_Mult(param_->dt()*RK4_postCoeff[RK4_count],RHS_RV); //Update RV_np1
+  if (RK4_count!=3) RV_LES_new.Equal_LinComb(1,RV_LES,param_->dt()*RK4_preCoeff[RK4_count],RHS_RV); //update RU_new
+  else RV_LES_new = RV_LES_np1;
+}
+
+void grid::Compute_RHS_Pois_Q_LES()
+{
+  //Rho_forV is considered constant
+  V_LES.Equal_Divide(RV_LES_new,Rho_forV); //Compute V_new at cell faces and store it in U
+  RHS_Pois_Q_LES.Equal_Div_F2C(V_LES); //Compute div(v_new_wop) and store it in RHS_Pois_Q
+  RHS_Pois_Q_LES *= (1./(param_->dt()*RK4_preCoeff[RK4_count]));
+  RHS_Pois_Q_LES.make_mean_zero(); //make RHS_Pois zero mean 
+}
+
+void grid::Solve_Poisson_Q_LES()
+{
+  dummy = (1./Rho_forV);
+  PS_.Solve(dummy,Q,RHS_Pois_Q_LES);
+}
+
+void grid::Update_RV_LES_WQ()
+{
+  dummy.Equal_Grad_C2F(Q); //Compute gradient of hydrodynamic pressure
+  RV_LES_np1.PlusEqual_Mult(-(param_->dt()*RK4_postCoeff[RK4_count]),dummy); //Update RU_np1 with pressure 
+  if (RK4_count!=3) RV_LES_new.PlusEqual_Mult(-(param_->dt()*RK4_preCoeff[RK4_count]),dummy); //update RU_new with pressure
+  else RV_LES_new=RV_LES_np1;
+}
+
 
 void grid::C_Source(double T)
 {
@@ -869,7 +941,8 @@ void grid::Update_Passive_Scalar()
 void grid::Update_RU_WOP()
 {
   //at this point RHS_RU is equal to either zero or the values come from particle depends on TwoWayCoupling On or Off
-  divergence.Equal_Div_F2C(U); //Divergence of u_int stored at cell center   Note: U at cell faces is already computed @Update_particle
+  U.Equal_Divide(RU_int,Rho);
+  //divergence.Equal_Div_F2C(U); //Divergence of u_int stored at cell center   Note: U at cell faces is already computed @Update_particle
   dummy.Equal_Del2(U); //compute div(grad(u_i)) and store it in the dummy variable
   RHS_RU.Equal_Mult(param_->Mu0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
   //convection in x direction:
@@ -946,6 +1019,7 @@ void grid::TimeAdvance_RK4()
 {
   RU_int=RU_new;
   RV_int=RV_new;
+  RV_LES_int = RV_LES_new;
   //P0_int=P0_new;
   Passive_Scalar_int = Passive_Scalar_new;
   //part.x_int=part.x_new; part.y_int=part.y_new; part.z_int=part.z_new; part.u_int=part.u_new; part.v_int=part.v_new; part.w_int=part.w_new; part.T_int=part.T_new;
@@ -1012,12 +1086,12 @@ void grid::Statistics()
   if (!param_->Stat_print()) return;
   std::cout<<std::endl<<"::::::::::TIME="<<T_cur<<"::::::::::STEP="<<num_timestep<<"::::::::::"<<std::endl;
   //std::cout<<"*** C_min="<<C_min<<"  ,  C_max="<<C_max<<"  ,  C_mean="<<C_mean<<std::endl;
-  /*std::cout<<"*** Particle Maximum CFL="<<Particle_CFL_Max<<*/"  ,  Gas Maximum CFL="<<Gas_CFL_Max<<"  ,  Gas Maximum diffusive CFL="<<Gas_Max_Diff_CFL<<std::endl;
+  std::cout<</*"*** Particle Maximum CFL="<<Particle_CFL_Max<<*/"  ,  Gas Maximum CFL="<<Gas_CFL_Max<<"  ,  Gas Maximum diffusive CFL="<<Gas_Max_Diff_CFL<<std::endl;
   std::cout<<"*** P0="<<P0<<"   ,   Number of Poisson solve iterations="<<PS_.num_iteration()<<std::endl;
   std::cout<<"*** Twice TKE_U ="<<TKE_U<<"  ,  TKE_V ="<<TKE_V<<"  ,  TKE_W ="<<TKE_W<<"  , Twice TKE ="<<TKE<<"  , Twice TKE2="<<TKE2<<std::endl;
   std::cout<<"*** Passive_Scalar_mean ="<<Passive_Scalar_mean<<std::endl;
   std::cout<<"*** Twice TKEV_V1 ="<<TKEV_V1<<"  ,  TKEV_V2 ="<<TKEV_V2<<"  ,  TKEV_V3 ="<<TKEV_V3<<"  , Twice TKEV ="<<TKEV<<"  , Twice VV="<<VV<<std::endl;
-  /*std::cout<<"*** Particle u_max="<<Vp_max<<*/"  ,  Gas interpolated u_max="<<ug_max<<"  ,  Gas u_max="<<u_max<<std::endl;
+  std::cout<</*"*** Particle u_max="<<Vp_max<<"  ,  Gas interpolated u_max="<<ug_max<<*/"  ,  Gas u_max="<<u_max<<std::endl;
   //std::cout<<"Mean energy transferred from particle to gas="<<-mean_energy_transferred<<"  ,  Balance_Index="<<Load_Balance<<std::endl;
   //std::cout<<"*** Particle Tmax ="<<Tp_max<<std::endl;
  
@@ -1127,7 +1201,7 @@ void grid::Write_info()
     info<<"  ***Processor number: "<<pc_->RANK()<<std::endl;
     info<<"  Location in CPU grid: ("<<pc_->I()<<","<<pc_->J()<<","<<pc_->K()<<") , Neighbor processes: TOP:"<<pc_->TOP()<<" BOT:"<<pc_->BOT()<<" RIGHT:"<<pc_->RIGHT()<<" LEFT:"<<pc_->LEFT()<<" FRONT:"<<pc_->FRONT()<<" REAR:"<<pc_->REAR()<<std::endl;
     info<<"  Local grid size: "<<size_->Nx()<<"x"<<size_->Ny()<<"x"<<size_->Nz()<<", Global grid index: i:"<<size_->il()<<"->"<<size_->ih()<<" j:"<<size_->jl()<<"->"<<size_->jh()<<" k:"<<size_->kl()<<"->"<<size_->kh()<<"  ,  Global coordinate: x:"<<size_->xl()<<"->"<<size_->xh()<<" y:"<<size_->yl()<<"->"<<size_->yh()<<" z:"<<size_->zl()<<"->"<<size_->zh()<<std::endl;
-    info<<" I have initially "<<part.Np<<" particles."<<std::endl<<std::endl;
+    //info<<" I have initially "<<part.Np<<" particles."<<std::endl<<std::endl;
     info.close();
     com_->Sequential_End(x_temp);
   }
