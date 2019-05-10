@@ -60,23 +60,35 @@ int main (int argc,char *argv[] )
       //if (PROC.IsRoot()) std::cout << "next RK4 step"<< std::endl;
       for (GRID.RK4_count=0;GRID.RK4_count<4;GRID.RK4_count++)
 	{
-	 if(PARAM.solve_for_scalar()) GRID.Update_Passive_Scalar();
-          if (PARAM.solve_for_vector()){
- 	  	GRID.Update_RV_WOQ();
-	  	GRID.Compute_RHS_Pois_Q();
-	  	GRID.Solve_Poisson_Q();
-	  	GRID.Update_RV_WQ();
+	 
+	  if (PARAM.filtering()){
+		 GRID.FilterVelocity();
+          	if(PARAM.solve_for_scalar()) GRID.Update_Passive_Scalar_LES();
+          	if (PARAM.solve_for_vector()){
+ 	  		GRID.Update_RV_LES_WOQ();
+	  		GRID.Compute_RHS_Pois_Q_LES();
+	  		GRID.Solve_Poisson_Q_LES();
+	  		GRID.Update_RV_LES_WQ();
+          	}
+	  }
+          else {
+		if(PARAM.solve_for_scalar()) GRID.Update_Passive_Scalar_LES();
+          	if (PARAM.solve_for_vector()){
+ 	  		GRID.Update_RV_LES_WOQ();
+	  		GRID.Compute_RHS_Pois_Q_LES();
+	  		GRID.Solve_Poisson_Q_LES();
+	  		GRID.Update_RV_LES_WQ();
+          	}
+
           }
-          if (PARAM.filtering()) GRID.FilterVelocity();
           GRID.Update_RU_WOP();
-	  
 	  GRID.Compute_RHS_Pois();
 	  GRID.Solve_Poisson();
 	  GRID.Update_RU_WP();
 	  GRID.TimeAdvance_RK4();
 	}
      
-      //GRID.RU_np1.make_mean_U0(RhoU_);
+      GRID.RU_np1.make_mean_U0(RhoU_);
       if(PARAM.elongated_box() == 1){
       	GRID.RU_np1.y.kill_strong_modes();
       	GRID.RU_np1.z.kill_strong_modes();
@@ -85,7 +97,7 @@ int main (int argc,char *argv[] )
       	if(GRID.num_timestep % 100 == 0) GRID.CopyBox();
                 
       }
-      //GRID.RV_np1.make_mean_U0(RhoV_);
+      GRID.RV_LES_np1.make_mean_U0(RhoV_);
       GRID.TimeAdvance();
       GRID.Statistics();
       //std::cout << "statistics reported! "<< std::endl;
@@ -93,7 +105,7 @@ int main (int argc,char *argv[] )
   
   
   /*auto stop = high_resolution_clock::now();
-  auto d = duration_cast<seconds>(stop-start);
+_
   double duration =  d.count();
   double longest_duration;
   MPI_Reduce(&duration,&longest_duration,1,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD);

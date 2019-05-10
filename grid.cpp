@@ -11,7 +11,7 @@
 #include "scalar_source.h"
 #include "vector_source.h"
 
-grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),U_tilde(s,com),RV(s,com),RV_int(s,com),RV_new(s,com),RV_np1(s,com),RV_LES(s,com),RV_LES_int(s,com),RV_LES_new(s,com),RV_LES_np1(s,com),Passive_Scalar_int(s,com),Passive_Scalar_new(s,com),Passive_Scalar_np1(s,com),Passive_Scalar_face(s,com),Passive_Scalar(s,com),RHS_Passive_Scalar(s,com), S1(s,com), S2(s,com), RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),RHS_RV(s,com),V(s,com),V_LES(s,com), Q(s,com),RHS_Pois_Q(s,com),RHS_Pois_Q_LES(s,com),C(s,com),dummy(s,com),dummy2(s,com),PS_(p,pc,s,com){
+grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),U_tilde(s,com),RV(s,com),RV_int(s,com),RV_new(s,com),RV_np1(s,com),RV_LES(s,com),RV_LES_int(s,com),RV_LES_new(s,com),RV_LES_np1(s,com),Passive_Scalar_int(s,com),Passive_Scalar_new(s,com),Passive_Scalar_np1(s,com),Passive_Scalar_face(s,com),Passive_Scalar(s,com),Passive_Scalar_LES_int(s,com),Passive_Scalar_LES_new(s,com),Passive_Scalar_LES_np1(s,com),Passive_Scalar_LES(s,com),RHS_Passive_Scalar(s,com), S1(s,com), S2(s,com), RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),RHS_RV(s,com),V(s,com),V_LES(s,com), Q(s,com),RHS_Pois_Q(s,com),RHS_Pois_Q_LES(s,com),divergence(s,com),dummy(s,com),dummy2(s,com),PS_(p,pc,s,com){
   size_=s;
   param_=p;
   pc_=pc;
@@ -65,7 +65,7 @@ grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s
 	  open_stat_file("TKE_U",stat_TKE_U);
 	  open_stat_file("TKE_V",stat_TKE_V);
 	  open_stat_file("TKE_W",stat_TKE_W);
-          open_stat_file("Passive_Scalar_mean",stat_Passive_Scalar_mean);
+	  open_stat_file("Passive_Scalar_mean",stat_Passive_Scalar_mean);
           open_stat_file("TKE_V1",stat_TKEV_V1);
 	  open_stat_file("TKE_V2",stat_TKEV_V2);
 	  open_stat_file("TKE_V3",stat_TKEV_V3);
@@ -455,6 +455,8 @@ void grid::Initialize()
   RV_LES_int=RV;
   Passive_Scalar_int = Passive_Scalar;
   Passive_Scalar_np1 = Passive_Scalar;
+  Passive_Scalar_LES_int = Passive_Scalar;
+  Passive_Scalar_LES_np1 = Passive_Scalar;
   //P0_int=P0;
   //P0_np1=P0;
   //Need to compute rho at faces once here, after this, Compute_RHS_Pois computes it
@@ -503,18 +505,41 @@ void grid::Store()
   //std::cout<<"my number of steps" << num_timestep<<std::endl;
   if ((num_timestep%param_->data_freq_fast()==0)||(Is_touch_))
     { 
+
       std::ostringstream filename_out_Data;
+      	
+      if (param_->filtering()){
+	filename_out_Data<<param_->data_dir()<<"U_tilde"<<"_"<<num_timestep<<".bin";
+      	std::string filename=filename_out_Data.str();
+      	com_->write(U_tilde,(char*)(filename.c_str()));
+        filename_out_Data.str("");
+        filename_out_Data.clear();
+    
+      	
+      }
+      
+      
       filename_out_Data<<param_->data_dir()<<"RU"<<"_"<<num_timestep<<".bin";
       std::string filename=filename_out_Data.str();
       com_->write(RU,(char*)(filename.c_str()));
       
       if ( param_->solve_for_vector()){
-      	
-       filename_out_Data.str("");
-       filename_out_Data.clear();
-       filename_out_Data<<param_->data_dir()<<"RV"<<"_"<<num_timestep<<".bin";
-       filename=filename_out_Data.str();
-       com_->write(RV,(char*)(filename.c_str()));
+       if (param_->filtering()){
+       		 RV = RV_LES;
+      		 filename_out_Data.str("");
+      		 filename_out_Data.clear();
+      		 filename_out_Data<<param_->data_dir()<<"RV_LES_"<<num_timestep<<".bin";
+      		 filename=filename_out_Data.str();
+      		 com_->write(RV,(char*)(filename.c_str()));
+	}
+       else{
+		 filename_out_Data.str("");
+      		 filename_out_Data.clear();
+      		 filename_out_Data<<param_->data_dir()<<"RV"<<"_"<<num_timestep<<".bin";
+      		 filename=filename_out_Data.str();
+      		 com_->write(RV,(char*)(filename.c_str()));
+
+	  }
       }
       /*if (param_->filtering())
       {
@@ -527,12 +552,22 @@ void grid::Store()
 
       }*/
       if ( param_->solve_for_scalar()){
-      	      
-       filename_out_Data.str("");
-       filename_out_Data.clear();
-       filename_out_Data<<param_->data_dir()<<"C"<<"_"<<num_timestep<<".bin";
-       filename=filename_out_Data.str();
-       com_->write(Passive_Scalar,(char*)(filename.c_str()));
+      	if (param_->filtering()){
+       		 Passive_Scalar = Passive_Scalar_LES;      
+     		 filename_out_Data.str("");
+      		 filename_out_Data.clear();
+      		 filename_out_Data<<param_->data_dir()<<"C_LES_"<<"_"<<num_timestep<<".bin";
+      		 filename=filename_out_Data.str();
+      		 com_->write(Passive_Scalar,(char*)(filename.c_str()));
+        }
+        else{
+		 filename_out_Data.str("");
+      		 filename_out_Data.clear();
+      		 filename_out_Data<<param_->data_dir()<<"C"<<"_"<<num_timestep<<".bin";
+      		 filename=filename_out_Data.str();
+      		 com_->write(Passive_Scalar,(char*)(filename.c_str()));
+     
+        }
       }
      
       if (pc_->IsRoot())
@@ -580,6 +615,7 @@ void grid::TimeAdvance()
 {
  
   Passive_Scalar = Passive_Scalar_np1;
+  Passive_Scalar_LES = Passive_Scalar_LES_np1;
   RU=RU_np1;
   RV=RV_np1;
   RV_LES = RV_LES_np1;
@@ -656,7 +692,7 @@ void grid::ConstructKernel()
 void grid::FilterVelocity()
 {
    
-  //U.Equal_Divide(RU_int,Rho);
+  U.Equal_Divide(RU_int,Rho);
  
   int count=0;
   for (int k=in_klo;k<=in_khi;k++)
@@ -778,20 +814,23 @@ void grid::Update_RV_WOQ()
   dummy2.z.Equal_Div_F2C(dummy);
   RHS_RV.z -= dummy2.z;
   //Add artificial force
-  if(!param_->S2_type()){
+  if(param_->S2_type()==0){
 	grid::V_Source(T_cur);
 	S2.x -= S2.x.mean();
 	S2.y -= S2.y.mean();
 	S2.z -= S2.z.mean();
 	RHS_RV+=S2;
   }
-  else{
+  else if (param_->S2_type()==1){
       dummy.x.Equal_Divide(RU_int.x,Rho);
       dummy.x.Equal_Iy_C2F(dummy.x);
       RHS_RV.y.PlusEqual_Mult(-1,dummy.x);	
 	
   }
-  
+  else if(param_->S2_type()==2){
+    RHS_RV.PlusEqual_Mult(param_->A(),RU_int);
+    
+  }
   RV_np1.PlusEqual_Mult(param_->dt()*RK4_postCoeff[RK4_count],RHS_RV); //Update RV_np1
   if (RK4_count!=3) RV_new.Equal_LinComb(1,RV,param_->dt()*RK4_preCoeff[RK4_count],RHS_RV); //update RU_new
   else RV_new = RV_np1;
@@ -802,6 +841,7 @@ void grid::Compute_RHS_Pois_Q()
   //Rho_forV is considered constant
   V.Equal_Divide(RV_new,Rho_forV); //Compute V_new at cell faces and store it in U
   RHS_Pois_Q.Equal_Div_F2C(V); //Compute div(v_new_wop) and store it in RHS_Pois_Q
+  RHS_Pois_Q -= divergence;
   RHS_Pois_Q *= (1./(param_->dt()*RK4_preCoeff[RK4_count]));
   RHS_Pois_Q.make_mean_zero(); //make RHS_Pois zero mean 
 }
@@ -824,8 +864,8 @@ void grid::Update_RV_LES_WOQ()
 {
      
    //interpolation
-  V_LES.Equal_Divide(RV_LES_int,Rho); //comupte v_int at faces (note: Rho_face is already computed from previous sub-step @ Compute_RHS_Pois)
-  //divergence.Equal_Div_F2C(V); //Divergence of v_int stored at cell center   Note: V at cell faces is already computed @Update_particle
+  V_LES.Equal_Divide(RV_LES_int,Rho_forV); //comupte v_int at faces (note: Rho_face is already computed from previous sub-step @ Compute_RHS_Pois)
+  divergence.Equal_Div_F2C(V_LES); //Divergence of v_int stored at cell center   Note: V at cell faces is already computed @Update_particle
   dummy.Equal_Del2(V_LES); //compute div(grad(v_i)) and store it in the dummy variable
   RHS_RV.Equal_Mult(param_->eta0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
   //convection in x direction:
@@ -847,18 +887,21 @@ void grid::Update_RV_LES_WOQ()
   dummy2.z.Equal_Div_F2C(dummy);
   RHS_RV.z -= dummy2.z;
   //Add artificial force
-  if(!param_->S2_type()){
+  if(param_->S2_type()==0){
 	grid::V_Source(T_cur);
 	S2.x -= S2.x.mean();
 	S2.y -= S2.y.mean();
 	S2.z -= S2.z.mean();
 	RHS_RV+=S2;
   }
-  else{
+  else if(param_->S2_type() == 1){
       //dummy.x.Equal_Divide(RU_tilde.x,Rho);
       dummy.x.Equal_Iy_C2F(U_tilde.x);
       RHS_RV.y.PlusEqual_Mult(-1,dummy.x);	
 	
+  }
+ else if (param_->S2_type() == 2){
+	RHS_RV.PlusEqual_Mult(param_->A(),RU_int);
   }
   
   RV_LES_np1.PlusEqual_Mult(param_->dt()*RK4_postCoeff[RK4_count],RHS_RV); //Update RV_np1
@@ -871,6 +914,7 @@ void grid::Compute_RHS_Pois_Q_LES()
   //Rho_forV is considered constant
   V_LES.Equal_Divide(RV_LES_new,Rho_forV); //Compute V_new at cell faces and store it in U
   RHS_Pois_Q_LES.Equal_Div_F2C(V_LES); //Compute div(v_new_wop) and store it in RHS_Pois_Q
+  RHS_Pois_Q_LES -= divergence;
   RHS_Pois_Q_LES *= (1./(param_->dt()*RK4_preCoeff[RK4_count]));
   RHS_Pois_Q_LES.make_mean_zero(); //make RHS_Pois zero mean 
 }
@@ -921,19 +965,52 @@ void grid::Update_Passive_Scalar()
     dummy2.y.Equal_Del2(Passive_Scalar_int);//div(grad(C))
     grid::C_Source(T_cur);
     RHS_Passive_Scalar.Equal_LinComb(param_->D_M(),dummy2.y,-1,dummy2.x);
-    if(!param_->S1_type()){
+    if(param_->S1_type()==0){
 	S1 -= S1.mean(); 
 	RHS_Passive_Scalar+=S1;
 	}
-    else{
+    else if (param_->S1_type()==1){
 	dummy.x.Equal_Ix_F2C(U.x);
     	RHS_Passive_Scalar.PlusEqual_Mult(-1,dummy.x);
     }
+    /*else if(param_->S1_type()==2){
+     RHS_Passive_Scalar.PlusEqual_Mult(param_->A(),RU_int.x);
+
+    }*/
     Passive_Scalar_np1.PlusEqual_Mult((param_->dt()*RK4_postCoeff[RK4_count]),RHS_Passive_Scalar); //Update Passive_Scalar_np1
     if (RK4_count!=3) Passive_Scalar_new.Equal_LinComb(1,Passive_Scalar,param_->dt()*RK4_preCoeff[RK4_count],RHS_Passive_Scalar); //update Passive_Scalar_new
     else Passive_Scalar_new=Passive_Scalar_np1;
     
     Passive_Scalar_face.Equal_I_C2F(Passive_Scalar_new);
+}
+
+void grid::Update_Passive_Scalar_LES()
+{
+    
+    
+    //U.Equal_Divide(RU_int,Rho);
+    dummy.Equal_Mult(U_tilde,Passive_Scalar_face);//computing u_int at faces, note: we have already computed Passive_Scalar_face in previous RK4 substep
+    dummy2.x.Equal_Div_F2C(dummy);
+    dummy2.y.Equal_Del2(Passive_Scalar_LES_int);//div(grad(C))
+    grid::C_Source(T_cur);
+    RHS_Passive_Scalar.Equal_LinComb(param_->D_M(),dummy2.y,-1,dummy2.x);
+    if(param_->S1_type()==0){
+	S1 -= S1.mean(); 
+	RHS_Passive_Scalar+=S1;
+	}
+    else if(param_->S1_type()==1){
+	dummy.x.Equal_Ix_F2C(U_tilde.x);
+    	RHS_Passive_Scalar.PlusEqual_Mult(-1,dummy.x);
+    }
+    /*else if(param_->S1_type()==2){
+       RHS_Passive_Scalar.PlusEqual_Mult(param_->A(),RU_int);
+
+    }*/
+    Passive_Scalar_LES_np1.PlusEqual_Mult((param_->dt()*RK4_postCoeff[RK4_count]),RHS_Passive_Scalar); //Update Passive_Scalar_np1
+    if (RK4_count!=3) Passive_Scalar_LES_new.Equal_LinComb(1,Passive_Scalar_LES,param_->dt()*RK4_preCoeff[RK4_count],RHS_Passive_Scalar); //update Passive_Scalar_new
+    else Passive_Scalar_LES_new=Passive_Scalar_LES_np1;
+    
+    Passive_Scalar_face.Equal_I_C2F(Passive_Scalar_LES_new);
 }
 
 
@@ -942,7 +1019,7 @@ void grid::Update_RU_WOP()
 {
   //at this point RHS_RU is equal to either zero or the values come from particle depends on TwoWayCoupling On or Off
   U.Equal_Divide(RU_int,Rho);
-  //divergence.Equal_Div_F2C(U); //Divergence of u_int stored at cell center   Note: U at cell faces is already computed @Update_particle
+  divergence.Equal_Div_F2C(U); //Divergence of u_int stored at cell center   Note: U at cell faces is already computed @Update_particle
   dummy.Equal_Del2(U); //compute div(grad(u_i)) and store it in the dummy variable
   RHS_RU.Equal_Mult(param_->Mu0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
   //convection in x direction:
@@ -995,6 +1072,7 @@ void grid::Compute_RHS_Pois()
 {
   U.Equal_Divide(RU_new,Rho); //Compute U_new at cell faces and store it in U
   RHS_Pois.Equal_Div_F2C(U); //Compute div(u_new_wop) and store it in RHS_Pois
+  RHS_Pois -= divergence;
   RHS_Pois *= (1./(param_->dt()*RK4_preCoeff[RK4_count]));
   RHS_Pois.make_mean_zero(); //make RHS_Pois zero mean (theoritically we do not need this if dP0/dt term is included, but not computationally!)
 }
@@ -1022,6 +1100,9 @@ void grid::TimeAdvance_RK4()
   RV_LES_int = RV_LES_new;
   //P0_int=P0_new;
   Passive_Scalar_int = Passive_Scalar_new;
+  Passive_Scalar_LES_int = Passive_Scalar_LES_new;
+
+
   //part.x_int=part.x_new; part.y_int=part.y_new; part.z_int=part.z_new; part.u_int=part.u_new; part.v_int=part.v_new; part.w_int=part.w_new; part.T_int=part.T_new;
 }
 
@@ -1032,20 +1113,28 @@ void grid::Statistics()
   //double C_min=C.min();
   //double C_mean=C.mean();
   double TKE2=U.mean_squares();
+  if (param_->filtering()) {
+	V.Equal_Divide(RV_LES,Rho_forV);
+        
+  	Passive_Scalar = Passive_Scalar_LES;
+  }
+  else  V.Equal_Divide(RV_np1,Rho_forV);
+  
   double VV=V.mean_squares();
+ 
   double Passive_Scalar_mean = Passive_Scalar.mean_squares();
   double Particle_CFL_Max=0;
   double TKE,TKE_U,TKE_V,TKE_W;
   double TKEV,TKEV_V1,TKEV_V2,TKEV_V3;
   U.Equal_Divide(RU_np1,Rho);
-  V.Equal_Divide(RV_np1,Rho_forV);
   double Gas_CFL_Max=U.max_cfl(param_->dt());
   double u_max=U.max();
   //double Vp_max=part.max(part.u);
   //double ug_max=part.max(part.ug);
   //double Tp_max=part.max(part.T);
   U*=RU_np1;
-  V*=RV_np1;
+  if (param_->filtering()) V*=RV_LES_np1;
+  else V*=RV_np1;
   TKE_U=U.x.mean();
   TKE_V=U.y.mean();
   TKE_W=U.z.mean();

@@ -92,13 +92,19 @@ class grid
   tensor0 RHS_Pois; //one part of RHS of Poisson equation
   tensor0 RHS_Pois_Q;
   tensor0 RHS_Pois_Q_LES;
-  tensor0 C; //particle concentration stored at cell center
+  //tensor0 C; //particle concentration stored at cell center
   tensor0 Passive_Scalar; //scalar concentration stored at cell center
   tensor0 S1;//source function in scalar momentum equation
   tensor1 S2;//vector source for vector field momentum equation
   tensor0 Passive_Scalar_int;
   tensor0 Passive_Scalar_new;
   tensor0 Passive_Scalar_np1;
+
+  tensor0 Passive_Scalar_LES; //scalar concentration stored at cell center
+
+  tensor0 Passive_Scalar_LES_int;
+  tensor0 Passive_Scalar_LES_new;
+  tensor0 Passive_Scalar_LES_np1;
   double Rho;
   //tensor0 Rho; //Gas density stored at cell center
   //tensor0 Rho_int;
@@ -113,7 +119,7 @@ class grid
   tensor1 dummy2; //dummt array for computations
   //tensor0 dummyS; //dummt array for computations on tensor0
   tensor0 divergence; //to store divergence of momentum/velocity
-  tensor0 RHS_Part_Temp; //Interpolated RHS of particle energy equation (due to the algorithm it has to be saved)
+  //tensor0 RHS_Part_Temp; //Interpolated RHS of particle energy equation (due to the algorithm it has to be saved)
   double Rho_forV;
   double P0; // mean thermodynamic pressure
   //double P0_int;
@@ -134,6 +140,7 @@ class grid
   void ConstructKernel();
   void FilterVelocity();
   void Update_Passive_Scalar();
+  void Update_Passive_Scalar_LES();
   void C_Source(double);
   void Update_RU_WOP();
   //void Update_P0();
