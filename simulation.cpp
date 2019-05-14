@@ -62,7 +62,7 @@ int main (int argc,char *argv[] )
 	{
 	 
 	  if (PARAM.filtering()){
-		 GRID.FilterVelocity();
+		 //GRID.FilterVelocity();
           	if(PARAM.solve_for_scalar()) GRID.Update_Passive_Scalar_LES();
           	if (PARAM.solve_for_vector()){
  	  		GRID.Update_RV_LES_WOQ();
@@ -97,6 +97,9 @@ int main (int argc,char *argv[] )
       	if(GRID.num_timestep % 100 == 0) GRID.CopyBox();
                 
       }
+      if (PARAM.filtering()){
+	 GRID.FilterVelocity();
+       } 	
       GRID.RV_LES_np1.make_mean_U0(RhoV_);
       GRID.TimeAdvance();
       GRID.Statistics();

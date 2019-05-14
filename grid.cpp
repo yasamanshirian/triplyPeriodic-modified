@@ -528,7 +528,7 @@ void grid::Store()
        		 RV = RV_LES;
       		 filename_out_Data.str("");
       		 filename_out_Data.clear();
-      		 filename_out_Data<<param_->data_dir()<<"RV_LES_"<<num_timestep<<".bin";
+      		 filename_out_Data<<param_->data_dir()<<"RV_LES"<<"_"<<num_timestep<<".bin";
       		 filename=filename_out_Data.str();
       		 com_->write(RV,(char*)(filename.c_str()));
 	}
