@@ -86,6 +86,9 @@ int main (int argc,char *argv[] )
 	  GRID.Solve_Poisson();
 	  GRID.Update_RU_WP();
 	  GRID.TimeAdvance_RK4();
+	  
+          if (PARAM.filtering()) GRID.FilterVelocity(); 	
+      
 	}
      
       GRID.RU_np1.make_mean_U0(RhoU_);
@@ -99,11 +102,8 @@ int main (int argc,char *argv[] )
       }
       GRID.RV_LES_np1.make_mean_U0(RhoV_);
       GRID.TimeAdvance();
-      if (PARAM.filtering()){
-	 GRID.FilterVelocity();
-       } 	
       GRID.Statistics();
-      //std::cout << "statistics reported! "<< std::endl;
+     
   }while ((GRID.T_cur<PARAM.T_final())&&(!GRID.Touch()));
   
   
