@@ -97,11 +97,11 @@ int main (int argc,char *argv[] )
       	if(GRID.num_timestep % 100 == 0) GRID.CopyBox();
                 
       }
+      GRID.RV_LES_np1.make_mean_U0(RhoV_);
+      GRID.TimeAdvance();
       if (PARAM.filtering()){
 	 GRID.FilterVelocity();
        } 	
-      GRID.RV_LES_np1.make_mean_U0(RhoV_);
-      GRID.TimeAdvance();
       GRID.Statistics();
       //std::cout << "statistics reported! "<< std::endl;
   }while ((GRID.T_cur<PARAM.T_final())&&(!GRID.Touch()));
