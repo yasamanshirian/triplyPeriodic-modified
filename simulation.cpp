@@ -72,12 +72,12 @@ int main (int argc,char *argv[] )
           	}
 	  }
           else {
-		if(PARAM.solve_for_scalar()) GRID.Update_Passive_Scalar_LES();
+		if(PARAM.solve_for_scalar()) GRID.Update_Passive_Scalar();
           	if (PARAM.solve_for_vector()){
- 	  		GRID.Update_RV_LES_WOQ();
-	  		GRID.Compute_RHS_Pois_Q_LES();
-	  		GRID.Solve_Poisson_Q_LES();
-	  		GRID.Update_RV_LES_WQ();
+ 	  		GRID.Update_RV_WOQ();
+	  		GRID.Compute_RHS_Pois_Q();
+	  		GRID.Solve_Poisson_Q();
+	  		GRID.Update_RV_WQ();
           	}
 
           }
@@ -97,6 +97,7 @@ int main (int argc,char *argv[] )
       	GRID.RU_np1.z.kill_strong_modes();
       }
       if(PARAM.elongated_box() == 2){
+        std::cout <<"Copying Box!" << std::endl;
       	if(GRID.num_timestep % 100 == 0) GRID.CopyBox();
                 
       }

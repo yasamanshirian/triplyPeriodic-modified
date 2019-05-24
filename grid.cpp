@@ -556,7 +556,7 @@ void grid::Store()
        		 Passive_Scalar = Passive_Scalar_LES;      
      		 filename_out_Data.str("");
       		 filename_out_Data.clear();
-      		 filename_out_Data<<param_->data_dir()<<"C_LES_"<<"_"<<num_timestep<<".bin";
+      		 filename_out_Data<<param_->data_dir()<<"C_LES"<<"_"<<num_timestep<<".bin";
       		 filename=filename_out_Data.str();
       		 com_->write(Passive_Scalar,(char*)(filename.c_str()));
         }
@@ -1359,10 +1359,14 @@ void grid::open_stat_file(const char *name,std::ofstream &file)
 }
 
 void grid::CopyBox(){
-  //this function is written only for Nx=256, Ny=Nz =64, for 48 proc with layout 4*4*3
-  //sending data is in x,y,z direction seperately with divinding 2 receiving processor into the beginning and ending portion
-  //beginning of each processor corresponds to ending part of 2PI-So receiving data is disected not from beginning of 2PI- 
-  //whereas ending portion of the receiving processors corresponds to beginning part of 2PI
+  /*	this function is written only for Nx=256, Ny=Nz =64, for 48 proc with layout 4*4*3
+  	sending data is in x,y,z direction seperately: This script finds whether the processor 
+	needs to recieve data from other processors or to send data to the others.
+	(sending means the processor is inside the 2pi,2pi,2pi box). 
+  	The processor is divided into two sections as ending and beginning.
+  	beginning of each processor corresponds to ending part of 2PI.  
+  	whereas ending portion of the receiving processors corresponds to beginning part of 2PI
+  */
   int numProcxBox =(size_->Lx()/size_->Ly() + pc_->NX() - 1)/(size_->Lx()/size_->Ly());
   bool sender = (pc_->I()< numProcxBox)?true:false;
   bool receiver = (pc_->I() < pc_->NX()/(size_->Lx()/size_->Lz()))?false:true;
