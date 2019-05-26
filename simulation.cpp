@@ -92,17 +92,19 @@ int main (int argc,char *argv[] )
 	}
      
       GRID.RU_np1.make_mean_U0(RhoU_);
+           GRID.RV_LES_np1.make_mean_U0(RhoV_);
+      GRID.TimeAdvance();
       if(PARAM.elongated_box() == 1){
       	GRID.RU_np1.y.kill_strong_modes();
       	GRID.RU_np1.z.kill_strong_modes();
       }
       if(PARAM.elongated_box() == 2){
-        std::cout <<"Copying Box!" << std::endl;
-      	if(GRID.num_timestep % 100 == 0) GRID.CopyBox();
+
+        //std::cout <<"Copying Box!" << std::endl;
+      	if(GRID.num_timestep % 1 == 0) GRID.CopyBox();
                 
       }
-      GRID.RV_LES_np1.make_mean_U0(RhoV_);
-      GRID.TimeAdvance();
+
       GRID.Statistics();
      
   }while ((GRID.T_cur<PARAM.T_final())&&(!GRID.Touch()));

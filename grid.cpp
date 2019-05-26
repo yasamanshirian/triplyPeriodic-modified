@@ -1367,7 +1367,9 @@ void grid::CopyBox(){
   	beginning of each processor corresponds to ending part of 2PI.  
   	whereas ending portion of the receiving processors corresponds to beginning part of 2PI
   */
+  //number of processors in x direction inside the box (2pi,2pi,2pi)
   int numProcxBox =(size_->Lx()/size_->Ly() + pc_->NX() - 1)/(size_->Lx()/size_->Ly());
+  
   bool sender = (pc_->I()< numProcxBox)?true:false;
   bool receiver = (pc_->I() < pc_->NX()/(size_->Lx()/size_->Lz()))?false:true;
   MPI_Request request_send[2];
@@ -1375,7 +1377,7 @@ void grid::CopyBox(){
   MPI_Status stat_send[2];
   MPI_Status stat_recv[1];
   int batch_size[2];
-  int b_offset = size_->bs();
+  //int b_offset = size_->bs();
   MPI_Datatype midmem,lastmem,recvmem;
   int start_indices_l[3];
   int lsizes[3];
@@ -1383,7 +1385,7 @@ void grid::CopyBox(){
   int rank_sender;
   int rank_receiver;
   int size_recv;
-  int N2PI = size_->Lz()/size_->dx();
+  //int N2PI = size_->Lz()/size_->dx();
   lsizes[0]=size_->Nz()-2*size_->bs();  lsizes[1]=size_->Ny()-2*size_->bs(); 
   memsizes[0]=size_->Nz();  memsizes[1]=size_->Ny();  memsizes[2]=size_->Nx();
   start_indices_l[0]=size_->bs();  start_indices_l[1]=size_->bs(); 
