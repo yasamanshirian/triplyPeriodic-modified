@@ -841,7 +841,7 @@ void grid::Compute_RHS_Pois_Q()
   //Rho_forV is considered constant
   V.Equal_Divide(RV_new,Rho_forV); //Compute V_new at cell faces and store it in U
   RHS_Pois_Q.Equal_Div_F2C(V); //Compute div(v_new_wop) and store it in RHS_Pois_Q
-  RHS_Pois_Q -= divergence;
+  //RHS_Pois_Q -= divergence;
   RHS_Pois_Q *= (1./(param_->dt()*RK4_preCoeff[RK4_count]));
   RHS_Pois_Q.make_mean_zero(); //make RHS_Pois zero mean 
 }
@@ -914,7 +914,7 @@ void grid::Compute_RHS_Pois_Q_LES()
   //Rho_forV is considered constant
   V_LES.Equal_Divide(RV_LES_new,Rho_forV); //Compute V_new at cell faces and store it in U
   RHS_Pois_Q_LES.Equal_Div_F2C(V_LES); //Compute div(v_new_wop) and store it in RHS_Pois_Q
-  RHS_Pois_Q_LES -= divergence;
+  //RHS_Pois_Q_LES -= divergence;
   RHS_Pois_Q_LES *= (1./(param_->dt()*RK4_preCoeff[RK4_count]));
   RHS_Pois_Q_LES.make_mean_zero(); //make RHS_Pois zero mean 
 }
@@ -1072,7 +1072,7 @@ void grid::Compute_RHS_Pois()
 {
   U.Equal_Divide(RU_new,Rho); //Compute U_new at cell faces and store it in U
   RHS_Pois.Equal_Div_F2C(U); //Compute div(u_new_wop) and store it in RHS_Pois
-  RHS_Pois -= divergence;
+  //RHS_Pois -= divergence;
   RHS_Pois *= (1./(param_->dt()*RK4_preCoeff[RK4_count]));
   RHS_Pois.make_mean_zero(); //make RHS_Pois zero mean (theoritically we do not need this if dP0/dt term is included, but not computationally!)
 }
@@ -1462,7 +1462,7 @@ if(receiver && !sender){
        MPI_Waitall(1,&request_send[0],&stat_send[0]); 
     
        rank_receiver = pc_->RANK() +  2*numProcxBox ;
-       MPI_Isend(&RU.y(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);		
+       MPI_Isend(&RU.z(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);		
        MPI_Waitall(1,&request_send[0],&stat_send[0]);
        
        rank_receiver = pc_->RANK() +  3*numProcxBox ;

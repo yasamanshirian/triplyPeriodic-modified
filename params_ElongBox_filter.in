@@ -23,13 +23,13 @@
 0
 
 #Tfinal #dt #threshold(to change parameters)
-0.4 0.004 40000
+100 0.004 40000
 
 #statistics_calculation (1:on 0:off)  #statistics_print_to_screen (1:on 0:off)
 1 1
 
 #data_frequency_fast(only save rho u)  #data_frequency_slow(save P C Vp and Rho)
-10 10
+125 125
 
 #data_saving_directory  #statistics_saving_directory
 /fastscratch/yshirian/data/data_26_N64_WV_k0p25_filter4dx_test/ /fastscratch/yshirian/data/stat_26_N64_WV_k0p25_filter4dx_test/

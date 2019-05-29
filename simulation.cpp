@@ -92,10 +92,8 @@ int main (int argc,char *argv[] )
 	}
      
       GRID.RV_LES_np1.make_mean_U0(RhoV_);
-      
       GRID.TimeAdvance();
-      GRID.RU.make_mean_U0(RhoU_);
-      
+
       if(PARAM.elongated_box() == 1){
       	GRID.RU.y.kill_strong_modes();
       	GRID.RU.z.kill_strong_modes();
@@ -103,7 +101,8 @@ int main (int argc,char *argv[] )
       if(PARAM.elongated_box() == 2){
         if(GRID.num_timestep % 100 == 0) GRID.CopyBox();
       }
-
+      GRID.RU.make_mean_U0(RhoU_);
+      
       GRID.Statistics();
      
   }while ((GRID.T_cur<PARAM.T_final())&&(!GRID.Touch()));
