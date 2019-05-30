@@ -620,7 +620,12 @@ void grid::TimeAdvance()
   RV=RV_np1;
   RV_LES = RV_LES_np1;
   //P0=P0_np1;
- 
+  Passive_Scalar_int = Passive_Scalar_np1;
+  Passive_Scalar_LES_int = Passive_Scalar_LES_np1;
+  RU_int=RU_np1;
+  RV_int=RV_np1;
+  RV_LES_int = RV_LES_np1;
+  
   //part.x=part.x_np1; part.y=part.y_np1; part.z=part.z_np1; part.u=part.u_np1; part.v=part.v_np1; part.w=part.w_np1; part.T=part.T_np1;
   T_cur+=param_->dt();
   num_timestep++;
@@ -792,9 +797,10 @@ void grid::Update_RV_WOQ()
      
    //interpolation
   V.Equal_Divide(RV_int,Rho_forV); //comupte v_int at faces (note: Rho_face is already computed from previous sub-step @ Compute_RHS_Pois)
-  //divergence.Equal_Div_F2C(V); //Divergence of v_int stored at cell center   Note: V at cell faces is already computed @Update_particle
+  divergence.Equal_Div_F2C(V); //Divergence of v_int stored at cell center   Note: V at cell faces is already computed @Update_particle
+  dummy2.Equal_Grad_C2F(divergence);
   dummy.Equal_Del2(V); //compute div(grad(v_i)) and store it in the dummy variable
-  RHS_RV.Equal_Mult(param_->eta0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
+  RHS_RV.Equal_LinComb(param_->eta0()/3.,dummy2,param_->eta0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
   //convection in x direction:
   dummy.Equal_I_C2F(RV_int.x); //interpolate u to neighbour edges //Note:even though U&RU are stored on cell faces we use C2F interpolation here, should be careful!
   dummy2.Equal_Ix_C2F(U); //interpolate RU in x direction
@@ -866,8 +872,9 @@ void grid::Update_RV_LES_WOQ()
    //interpolation
   V_LES.Equal_Divide(RV_LES_int,Rho_forV); //comupte v_int at faces (note: Rho_face is already computed from previous sub-step @ Compute_RHS_Pois)
   divergence.Equal_Div_F2C(V_LES); //Divergence of v_int stored at cell center   Note: V at cell faces is already computed @Update_particle
+  dummy2.Equal_Grad_C2F(divergence);
   dummy.Equal_Del2(V_LES); //compute div(grad(v_i)) and store it in the dummy variable
-  RHS_RV.Equal_Mult(param_->eta0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
+  RHS_RV.Equal_LinComb(param_->eta0()/3.,dummy2,param_->eta0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
   //convection in x direction:
   dummy.Equal_I_C2F(RV_LES_int.x); //interpolate u to neighbour edges //Note:even though U&RU are stored on cell faces we use C2F interpolation here, should be careful!
   dummy2.Equal_Ix_C2F(U_tilde); //interpolate RU in x direction (note : U_tilde is already computed in @FilterVelocity)
@@ -1020,8 +1027,9 @@ void grid::Update_RU_WOP()
   //at this point RHS_RU is equal to either zero or the values come from particle depends on TwoWayCoupling On or Off
   U.Equal_Divide(RU_int,Rho);
   divergence.Equal_Div_F2C(U); //Divergence of u_int stored at cell center   Note: U at cell faces is already computed @Update_particle
+  dummy2.Equal_Grad_C2F(divergence);
   dummy.Equal_Del2(U); //compute div(grad(u_i)) and store it in the dummy variable
-  RHS_RU.Equal_Mult(param_->Mu0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
+  RHS_RU.Equal_LinComb(param_->Mu0()/3.,dummy2,param_->Mu0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
   //convection in x direction:
   dummy.Equal_I_C2F(U.x); //interpolate u to neighbour edges //Note:even though U&RU are stored on cell faces we use C2F interpolation here, should be careful!
   dummy2.Equal_Ix_C2F(RU_int); //interpolate RU in x direction
@@ -1372,11 +1380,11 @@ void grid::CopyBox(){
   
   bool sender = (pc_->I()< numProcxBox)?true:false;
   bool receiver = (pc_->I() < pc_->NX()/(size_->Lx()/size_->Lz()))?false:true;
-  MPI_Request request_send[2];
+  MPI_Request request_send[1];
   MPI_Request request_recv[1];
-  MPI_Status stat_send[2];
+  MPI_Status stat_send[1];
   MPI_Status stat_recv[1];
-  int batch_size[2];
+  //int batch_size[2];
   //int b_offset = size_->bs();
   MPI_Datatype midmem,lastmem,recvmem;
   int start_indices_l[3];
@@ -1384,7 +1392,7 @@ void grid::CopyBox(){
   int memsizes[3];
   int rank_sender;
   int rank_receiver;
-  int size_recv;
+  //int size_recv;
   //int N2PI = size_->Lz()/size_->dx();
   lsizes[0]=size_->Nz()-2*size_->bs();  lsizes[1]=size_->Ny()-2*size_->bs(); 
   memsizes[0]=size_->Nz();  memsizes[1]=size_->Ny();  memsizes[2]=size_->Nx();
@@ -1393,41 +1401,47 @@ void grid::CopyBox(){
 
   if(receiver && !sender){
         //finding size of receiving data
-  	batch_size[1] = size_->Nx() - 2*size_->bs();
-        lsizes[2] = batch_size[1];
+  	//batch_size[1] = size_->Nx() - 2*size_->bs();
+        //lsizes[2] = batch_size[1];
+        lsizes[2] = size_->Nx() - 2*size_->bs();
         //finding the proc which is sending data
 	rank_sender = pc_->RANK() - (pc_->RANK()%pc_->NX()) *numProcxBox;
-        size_recv = lsizes[2]*lsizes[0]*lsizes[1];
+        //size_recv = lsizes[2]*lsizes[0]*lsizes[1];
 	//memory layout to receive data for beginning of the proc
         start_indices_l[2]=size_->bs();
 	MPI_Type_create_subarray(3,memsizes,lsizes,start_indices_l,MPI_ORDER_C,MPI_DOUBLE,&recvmem);
 	MPI_Type_commit(&recvmem);
         }
-  if(receiver && !sender){
-	MPI_Irecv(&RU.x(0,0,0),1,recvmem,rank_sender, 0,MPI_COMM_WORLD,&request_recv[0]);			
-        MPI_Waitall(1,&request_recv[0],&stat_recv[0]);  
-  }
   if(sender){
        //find the size of sending data to be beginning ofthe middle processor
-       batch_size[0] = size_->Nx() -2*size_->bs(); 
+       //batch_size[0] = size_->Nx() -2*size_->bs(); 
        //memory layout for sending data for the beinning of the middle proc
-       lsizes[2]=batch_size[0];
+       //lsizes[2]=batch_size[0];
+       lsizes[2] = size_->Nx() - 2*size_->bs();
        start_indices_l[2]=size_->bs();
        MPI_Type_create_subarray(3,memsizes,lsizes,start_indices_l,MPI_ORDER_C,MPI_DOUBLE,&midmem);
        MPI_Type_commit(&midmem);
        }
- if(sender){
+  
+  if(receiver && !sender){
+	MPI_Irecv(&RU.x(0,0,0),1,recvmem,rank_sender, 0,MPI_COMM_WORLD,&request_recv[0]);			
+        MPI_Waitall(1,&request_recv[0],&stat_recv[0]);  
+  }
+  
+  if(sender){
        //sending data to middle processor
        rank_receiver = pc_->RANK() +  numProcxBox;
        MPI_Isend(&RU.x(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
        //sending data to far right processor in x direction 
        MPI_Waitall(1,&request_send[0],&stat_send[0]);     
+       
        rank_receiver = pc_->RANK() +  2*numProcxBox ;
        MPI_Isend(&RU.x(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
+       MPI_Waitall(1,&request_send[0],&stat_send[0]);
+ 
+
        rank_receiver = pc_->RANK() +  3*numProcxBox ;
        MPI_Isend(&RU.x(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
-       
- 
        MPI_Waitall(1,&request_send[0],&stat_send[0]);
  
   
