@@ -847,7 +847,7 @@ void grid::Compute_RHS_Pois_Q()
   //Rho_forV is considered constant
   V.Equal_Divide(RV_new,Rho_forV); //Compute V_new at cell faces and store it in U
   RHS_Pois_Q.Equal_Div_F2C(V); //Compute div(v_new_wop) and store it in RHS_Pois_Q
-  //RHS_Pois_Q -= divergence;
+ 
   RHS_Pois_Q *= (1./(param_->dt()*RK4_preCoeff[RK4_count]));
   RHS_Pois_Q.make_mean_zero(); //make RHS_Pois zero mean 
 }
@@ -921,7 +921,6 @@ void grid::Compute_RHS_Pois_Q_LES()
   //Rho_forV is considered constant
   V_LES.Equal_Divide(RV_LES_new,Rho_forV); //Compute V_new at cell faces and store it in U
   RHS_Pois_Q_LES.Equal_Div_F2C(V_LES); //Compute div(v_new_wop) and store it in RHS_Pois_Q
-  //RHS_Pois_Q_LES -= divergence;
   RHS_Pois_Q_LES *= (1./(param_->dt()*RK4_preCoeff[RK4_count]));
   RHS_Pois_Q_LES.make_mean_zero(); //make RHS_Pois zero mean 
 }
@@ -1080,7 +1079,6 @@ void grid::Compute_RHS_Pois()
 {
   U.Equal_Divide(RU_new,Rho); //Compute U_new at cell faces and store it in U
   RHS_Pois.Equal_Div_F2C(U); //Compute div(u_new_wop) and store it in RHS_Pois
-  //RHS_Pois -= divergence;
   RHS_Pois *= (1./(param_->dt()*RK4_preCoeff[RK4_count]));
   RHS_Pois.make_mean_zero(); //make RHS_Pois zero mean (theoritically we do not need this if dP0/dt term is included, but not computationally!)
 }
@@ -1117,9 +1115,7 @@ void grid::TimeAdvance_RK4()
 void grid::Statistics()
 {
   if (!param_->Statistics()) return;
-  //double C_max=C.max();
-  //double C_min=C.min();
-  //double C_mean=C.mean();
+ 
   double TKE2=U.mean_squares();
   if (param_->filtering()) {
 	V.Equal_Divide(RV_LES,Rho_forV);
@@ -1137,9 +1133,6 @@ void grid::Statistics()
   U.Equal_Divide(RU_np1,Rho);
   double Gas_CFL_Max=U.max_cfl(param_->dt());
   double u_max=U.max();
-  //double Vp_max=part.max(part.u);
-  //double ug_max=part.max(part.ug);
-  //double Tp_max=part.max(part.T);
   U*=RU_np1;
   if (param_->filtering()) V*=RV_LES_np1;
   else V*=RV_np1;
@@ -1152,16 +1145,8 @@ void grid::Statistics()
   TKEV_V3=V.z.mean();
   TKEV=TKEV_V1+TKEV_V2+TKEV_V3;
   double Gas_Max_Diff_CFL = param_->dt() / ( size_->dx() * size_->dx() * Rho / param_->Mu0()) * 6.; //when dx=dy=dz
-  //double Load_Balance=part.Balance_Index();
-  //part.trajectory(T_cur); //store particle trajectory
-  //double Tp_mean = part.mean(part.T);
-  //double HT_mean = mean_energy_transferred;
   dummy.x = P0/param_->R()/Rho;
-  //double Tg_mean = dummy.x.mean();
   if (!pc_->IsRoot()) return;
-  //stat_Tg<<T_cur<<" "<<Tg_mean<<std::endl;
-  //stat_Tp<<T_cur<<" "<<Tp_mean<<std::endl;
-  //stat_HT<<T_cur<<" "<<HT_mean<<std::endl;
   stat_TKE2<<T_cur<<" "<<TKE2<<std::endl;
   stat_TKE<<T_cur<<" "<<TKE<<std::endl;
   stat_TKE_U<<T_cur<<" "<<TKE_U<<std::endl;
@@ -1172,27 +1157,18 @@ void grid::Statistics()
   stat_TKEV_V2<<T_cur<<" "<<TKEV_V2<<std::endl;
   stat_TKEV_V3<<T_cur<<" "<<TKEV_V3<<std::endl;
   stat_P0<<T_cur<<" "<<P0<<std::endl;
-  //stat_CMax<<T_cur<<" "<<C_max<<std::endl;
-  //stat_CMin<<T_cur<<" "<<C_min<<std::endl;
-  //stat_CMean<<T_cur<<" "<<C_mean<<std::endl;
-  //stat_ParticleMaxCFL<<T_cur<<" "<<Particle_CFL_Max<<std::endl;    
   stat_GasMaxCFL<<T_cur<<" "<<Gas_CFL_Max<<std::endl;    
   stat_GasMaxDiffCFL<<T_cur<<" "<<Gas_Max_Diff_CFL<<std::endl;
   stat_NumIteration<<T_cur<<" "<<PS_.num_iteration()<<std::endl;
-  //stat_BalanceIndex<<T_cur<<" "<<Load_Balance<<std::endl;
   if (!param_->Stat_print()) return;
   std::cout<<std::endl<<"::::::::::TIME="<<T_cur<<"::::::::::STEP="<<num_timestep<<"::::::::::"<<std::endl;
-  //std::cout<<"*** C_min="<<C_min<<"  ,  C_max="<<C_max<<"  ,  C_mean="<<C_mean<<std::endl;
   std::cout<</*"*** Particle Maximum CFL="<<Particle_CFL_Max<<*/"  ,  Gas Maximum CFL="<<Gas_CFL_Max<<"  ,  Gas Maximum diffusive CFL="<<Gas_Max_Diff_CFL<<std::endl;
   std::cout<<"*** P0="<<P0<<"   ,   Number of Poisson solve iterations="<<PS_.num_iteration()<<std::endl;
   std::cout<<"*** Twice TKE_U ="<<TKE_U<<"  ,  TKE_V ="<<TKE_V<<"  ,  TKE_W ="<<TKE_W<<"  , Twice TKE ="<<TKE<<"  , Twice TKE2="<<TKE2<<std::endl;
   std::cout<<"*** Passive_Scalar_mean ="<<Passive_Scalar_mean<<std::endl;
   std::cout<<"*** Twice TKEV_V1 ="<<TKEV_V1<<"  ,  TKEV_V2 ="<<TKEV_V2<<"  ,  TKEV_V3 ="<<TKEV_V3<<"  , Twice TKEV ="<<TKEV<<"  , Twice VV="<<VV<<std::endl;
   std::cout<</*"*** Particle u_max="<<Vp_max<<"  ,  Gas interpolated u_max="<<ug_max<<*/"  ,  Gas u_max="<<u_max<<std::endl;
-  //std::cout<<"Mean energy transferred from particle to gas="<<-mean_energy_transferred<<"  ,  Balance_Index="<<Load_Balance<<std::endl;
-  //std::cout<<"*** Particle Tmax ="<<Tp_max<<std::endl;
- 
-}
+  }
 
 
 void grid::Write_info()
@@ -1384,16 +1360,12 @@ void grid::CopyBox(){
   MPI_Request request_recv[1];
   MPI_Status stat_send[1];
   MPI_Status stat_recv[1];
-  //int batch_size[2];
-  //int b_offset = size_->bs();
   MPI_Datatype midmem,lastmem,recvmem;
   int start_indices_l[3];
   int lsizes[3];
   int memsizes[3];
   int rank_sender;
   int rank_receiver;
-  //int size_recv;
-  //int N2PI = size_->Lz()/size_->dx();
   lsizes[0]=size_->Nz()-2*size_->bs();  lsizes[1]=size_->Ny()-2*size_->bs(); 
   memsizes[0]=size_->Nz();  memsizes[1]=size_->Ny();  memsizes[2]=size_->Nx();
   start_indices_l[0]=size_->bs();  start_indices_l[1]=size_->bs(); 
@@ -1401,22 +1373,17 @@ void grid::CopyBox(){
 
   if(receiver && !sender){
         //finding size of receiving data
-  	//batch_size[1] = size_->Nx() - 2*size_->bs();
-        //lsizes[2] = batch_size[1];
-        lsizes[2] = size_->Nx() - 2*size_->bs();
+  	lsizes[2] = size_->Nx() - 2*size_->bs();
         //finding the proc which is sending data
 	rank_sender = pc_->RANK() - (pc_->RANK()%pc_->NX()) *numProcxBox;
-        //size_recv = lsizes[2]*lsizes[0]*lsizes[1];
-	//memory layout to receive data for beginning of the proc
+        //memory layout to receive data for beginning of the proc
         start_indices_l[2]=size_->bs();
 	MPI_Type_create_subarray(3,memsizes,lsizes,start_indices_l,MPI_ORDER_C,MPI_DOUBLE,&recvmem);
 	MPI_Type_commit(&recvmem);
         }
   if(sender){
        //find the size of sending data to be beginning ofthe middle processor
-       //batch_size[0] = size_->Nx() -2*size_->bs(); 
        //memory layout for sending data for the beinning of the middle proc
-       //lsizes[2]=batch_size[0];
        lsizes[2] = size_->Nx() - 2*size_->bs();
        start_indices_l[2]=size_->bs();
        MPI_Type_create_subarray(3,memsizes,lsizes,start_indices_l,MPI_ORDER_C,MPI_DOUBLE,&midmem);
@@ -1424,69 +1391,69 @@ void grid::CopyBox(){
        }
   
   if(receiver && !sender){
-	MPI_Irecv(&RU.x(0,0,0),1,recvmem,rank_sender, 0,MPI_COMM_WORLD,&request_recv[0]);			
+	MPI_Irecv(&RU_np1.x(0,0,0),1,recvmem,rank_sender, 0,MPI_COMM_WORLD,&request_recv[0]);			
         MPI_Waitall(1,&request_recv[0],&stat_recv[0]);  
   }
   
   if(sender){
        //sending data to middle processor
        rank_receiver = pc_->RANK() +  numProcxBox;
-       MPI_Isend(&RU.x(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
+       MPI_Isend(&RU_np1.x(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
        //sending data to far right processor in x direction 
        MPI_Waitall(1,&request_send[0],&stat_send[0]);     
        
        rank_receiver = pc_->RANK() +  2*numProcxBox ;
-       MPI_Isend(&RU.x(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
+       MPI_Isend(&RU_np1.x(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
        MPI_Waitall(1,&request_send[0],&stat_send[0]);
  
 
        rank_receiver = pc_->RANK() +  3*numProcxBox ;
-       MPI_Isend(&RU.x(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
+       MPI_Isend(&RU_np1.x(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
        MPI_Waitall(1,&request_send[0],&stat_send[0]);
  
   
  }
 
 if(receiver && !sender){
-        MPI_Irecv(&RU.y(0,0,0),1,recvmem,rank_sender, 0,MPI_COMM_WORLD,&request_recv[0]);			
+        MPI_Irecv(&RU_np1.y(0,0,0),1,recvmem,rank_sender, 0,MPI_COMM_WORLD,&request_recv[0]);			
         MPI_Waitall(1,&request_recv[0],&stat_recv[0]);  
 }
  if(sender){
        rank_receiver = pc_->RANK() +  numProcxBox; 
-       MPI_Isend(&RU.y(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
+       MPI_Isend(&RU_np1.y(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
        MPI_Waitall(1,&request_send[0],&stat_send[0]);
      
        rank_receiver = pc_->RANK() +  2*numProcxBox ;
-       MPI_Isend(&RU.y(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);		
+       MPI_Isend(&RU_np1.y(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);		
        MPI_Waitall(1,&request_send[0],&stat_send[0]);
        
        rank_receiver = pc_->RANK() +  3*numProcxBox ;
-       MPI_Isend(&RU.y(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);		
+       MPI_Isend(&RU_np1.y(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);		
        MPI_Waitall(1,&request_send[0],&stat_send[0]);
 
 
    }
 if(receiver && !sender){
-        MPI_Irecv(&RU.z(0,0,0),1,recvmem,rank_sender, 0,MPI_COMM_WORLD,&request_recv[0]);			
+        MPI_Irecv(&RU_np1.z(0,0,0),1,recvmem,rank_sender, 0,MPI_COMM_WORLD,&request_recv[0]);			
         MPI_Waitall(1,&request_recv[0],&stat_recv[0]);  
 }
  if(sender){
        rank_receiver = pc_->RANK() +  numProcxBox; 
-       MPI_Isend(&RU.z(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
+       MPI_Isend(&RU_np1.z(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);
        MPI_Waitall(1,&request_send[0],&stat_send[0]); 
     
        rank_receiver = pc_->RANK() +  2*numProcxBox ;
-       MPI_Isend(&RU.z(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);		
+       MPI_Isend(&RU_np1.z(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);		
        MPI_Waitall(1,&request_send[0],&stat_send[0]);
        
        rank_receiver = pc_->RANK() +  3*numProcxBox ;
-       MPI_Isend(&RU.z(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);		
+       MPI_Isend(&RU_np1.z(0,0,0),1,midmem,rank_receiver, 0,MPI_COMM_WORLD,&request_send[0]);		
        MPI_Waitall(1,&request_send[0],&stat_send[0]);
   
 
   }
 
-  RU.Update_Ghosts();
+  RU_np1.Update_Ghosts();
 
 }
 

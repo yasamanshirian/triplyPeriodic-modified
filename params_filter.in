@@ -14,7 +14,7 @@
 0 1
 
 #to filter the velocity in background #width of the filter based on the box sizei 4dx = 0.39265 8dx = 0.78529 16dx=1.57058
-1 0.39265
+1 0.78529
 
 #BorderSize (=1 for 2nd order central difference)
 1
@@ -110,4 +110,4 @@
 0
 
 #Source function for vector field transfer equation(0=custom source : update Vector_source.h , 1=for cases with wave number=0. 2=for AU)
-0
+1

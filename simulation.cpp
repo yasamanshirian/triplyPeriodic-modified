@@ -57,7 +57,7 @@ int main (int argc,char *argv[] )
   do {
       PARAM.update(GRID.T_cur);
       // RK4 loop
-      //if (PROC.IsRoot()) std::cout << "next RK4 step"<< std::endl;
+      
       for (GRID.RK4_count=0;GRID.RK4_count<4;GRID.RK4_count++)
 	{
 	 
@@ -90,19 +90,20 @@ int main (int argc,char *argv[] )
           if (PARAM.filtering()) GRID.FilterVelocity(); 	
       
 	}
-     
-      GRID.RV_LES_np1.make_mean_U0(RhoV_);
-      GRID.TimeAdvance();
-
-      if(PARAM.elongated_box() == 1){
-      	GRID.RU.y.kill_strong_modes();
-      	GRID.RU.z.kill_strong_modes();
+      if (PARAM.filtering()) GRID.RV_LES_np1.make_mean_U0(RhoV_);
+      else  GRID.RV_np1.make_mean_U0(RhoV_);
+ 
+      GRID.RU_np1.make_mean_U0(RhoU_);
+       if(PARAM.elongated_box() == 1){
+      	GRID.RU_np1.y.kill_strong_modes();
+      	GRID.RU_np1.z.kill_strong_modes();
       }
       if(PARAM.elongated_box() == 2){
         if(GRID.num_timestep % 100 == 0) GRID.CopyBox();
       }
-      GRID.RU.make_mean_U0(RhoU_);
-      
+      GRID.TimeAdvance();
+
+          
       GRID.Statistics();
      
   }while ((GRID.T_cur<PARAM.T_final())&&(!GRID.Touch()));
