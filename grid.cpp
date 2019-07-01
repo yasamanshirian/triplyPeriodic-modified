@@ -611,6 +611,14 @@ void grid::Store()
     }
 }
 
+/**void grid::Update_Rho()
+{
+  RHS_Rho.Equal_Div_F2C(RU_int); //In fact, here we compute minus RHS_Rho, i.e. div(RU)
+  Rho_np1.PlusEqual_Mult(-(param_->dt()*RK4_postCoeff[RK4_count]),RHS_Rho); //Update Rho_np1
+  if (RK4_count!=3) Rho_new.Equal_LinComb(1,Rho,-param_->dt()*RK4_preCoeff[RK4_count],RHS_Rho); //update Rho_new
+  else Rho_new=Rho_np1;
+}**/
+
 void grid::TimeAdvance()
 {
  
@@ -1028,7 +1036,7 @@ void grid::Update_RU_WOP()
   divergence.Equal_Div_F2C(U); //Divergence of u_int stored at cell center   Note: U at cell faces is already computed @Update_particle
   dummy2.Equal_Grad_C2F(divergence);
   dummy.Equal_Del2(U); //compute div(grad(u_i)) and store it in the dummy variable
-  RHS_RU.Equal_LinComb(param_->Mu0()/3.,dummy2,param_->Mu0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
+  RHS_RU.Equal_LinComb(param_->Mu0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
   //convection in x direction:
   dummy.Equal_I_C2F(U.x); //interpolate u to neighbour edges //Note:even though U&RU are stored on cell faces we use C2F interpolation here, should be careful!
   dummy2.Equal_Ix_C2F(RU_int); //interpolate RU in x direction
