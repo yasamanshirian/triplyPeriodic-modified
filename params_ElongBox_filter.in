@@ -14,7 +14,7 @@
 0 1
 
 #to filter the velocity in background #width of the filter based on the box sizei 4dx = 0.39265 8dx = 0.78529 16dx=1.57058
-1 0.39265
+1 0.78529
 
 #BorderSize (=1 for 2nd order central difference)
 1
@@ -32,7 +32,7 @@
 125 125
 
 #data_saving_directory  #statistics_saving_directory
-/fastscratch/yshirian/data/data_26_N64_WV_k0p5_filter4dx/ /fastscratch/yshirian/data/stat_26_N64_WV_k0p5_filter4dx/
+/fastscratch/yshirian/data/data_26_N64_WV_k0p25_filter8dx/ /fastscratch/yshirian/data/stat_26_N64_WV_k0p25_filter8dx/
 
 #Initial condition (0: from U.bin,V.bin,W.bin  1:from Restart.bin  2:Everything Uniform 3:TaylorGreenX 4:TaylorGreenY 5:TaylorGreenZ)
 0
