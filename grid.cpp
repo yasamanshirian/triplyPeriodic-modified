@@ -1033,10 +1033,10 @@ void grid::Update_RU_WOP()
 {
   //at this point RHS_RU is equal to either zero or the values come from particle depends on TwoWayCoupling On or Off
   U.Equal_Divide(RU_int,Rho);
-  divergence.Equal_Div_F2C(U); //Divergence of u_int stored at cell center   Note: U at cell faces is already computed @Update_particle
-  dummy2.Equal_Grad_C2F(divergence);
+  //divergence.Equal_Div_F2C(U); //Divergence of u_int stored at cell center   Note: U at cell faces is already computed @Update_particle
+  //dummy2.Equal_Grad_C2F(divergence);
   dummy.Equal_Del2(U); //compute div(grad(u_i)) and store it in the dummy variable
-  RHS_RU.Equal_LinComb(param_->Mu0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
+  RHS_RU.Equal_Mult(param_->Mu0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
   //convection in x direction:
   dummy.Equal_I_C2F(U.x); //interpolate u to neighbour edges //Note:even though U&RU are stored on cell faces we use C2F interpolation here, should be careful!
   dummy2.Equal_Ix_C2F(RU_int); //interpolate RU in x direction
