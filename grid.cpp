@@ -876,20 +876,21 @@ void grid::Update_RV_LES_WOQ()
   dummy.Equal_Del2(V_LES); //compute div(grad(v_i)) and store it in the dummy variable
   RHS_RV.Equal_LinComb(param_->eta0()/3.,dummy2,param_->eta0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
   //convection in x direction:
+  RV.Equal_LinComb(1,U,-1,U_tilde); //only to account small scales. Careful if you are using U in other functions !!!
   dummy.Equal_I_C2F(RV_LES_int.x); //interpolate u to neighbour edges //Note:even though U&RU are stored on cell faces we use C2F interpolation here, should be careful!
-  dummy2.Equal_Ix_C2F(U_tilde); //interpolate RU in x direction (note : U_tilde is already computed in @FilterVelocity)
+  dummy2.Equal_Ix_C2F(RV); //interpolate RU in x direction (note : U_tilde is already computed in @FilterVelocity)
   dummy *= dummy2;
   dummy2.x.Equal_Div_F2C(dummy);
   RHS_RV.x -= dummy2.x;
   //convection in y direction:
   dummy.Equal_I_C2F(RV_LES_int.y); //interpolate u to neighbour edges
-  dummy2.Equal_Iy_C2F(U_tilde); //interpolate RU in y direction
+  dummy2.Equal_Iy_C2F(RV); //interpolate RU in x direction (note : U_tilde is already computed in @FilterVelocity)
   dummy *= dummy2;
   dummy2.y.Equal_Div_F2C(dummy);
   RHS_RV.y -= dummy2.y;
   //convection in z direction:
   dummy.Equal_I_C2F(RV_LES_int.z); //interpolate u to neighbour edges
-  dummy2.Equal_Iz_C2F(U_tilde); //interpolate RU in z direction
+  dummy2.Equal_Iz_C2F(RV); //interpolate RU in x direction (note : U_tilde is already computed in @FilterVelocity)
   dummy *= dummy2;
   dummy2.z.Equal_Div_F2C(dummy);
   RHS_RV.z -= dummy2.z;
