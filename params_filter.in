@@ -2,7 +2,7 @@
 #DO NOT CHANGE THE ORDER OF PARAMETERS BUT YOU CAN ADD COMMENT USING HASH TAG => EACH LINE BEGINS WITH: HASH OR DATA OR NULL
 
 #Nx_tot #Ny_tot #Nz_tot
-128 128 128 
+64 64 64  
 
 #Lx #Ly #Lz 6.2823
 6.2823 6.2823 6.2823
@@ -14,7 +14,7 @@
 0 1
 
 #to filter the velocity in background #width of the filter based on the box sizei 4dx = 0.39265 8dx = 0.78529 16dx=1.57058
-1 0.39265
+1 1.57058
 
 #BorderSize (=1 for 2nd order central difference)
 1
@@ -23,16 +23,16 @@
 0
 
 #Tfinal #dt #threshold(to change parameters)
-2000 0.001 40000
+2000 0.004 40000
 
 #statistics_calculation (1:on 0:off)  #statistics_print_to_screen (1:on 0:off)
 1 1
 
 #data_frequency_fast(only save rho u)  #data_frequency_slow(save P C Vp and Rho)
-500 500
+125 125 
 
 #data_saving_directory  #statistics_saving_directory
-/fastscratch/yshirian/data/data_26_N128_WV_k8_filter4dx/ /fastscratch/yshirian/data/stat_26_N128_WV_k8_filter4dx/
+/home/mani/yshirian/HIT/data_26_N64_WV_k1_lowfilter16dx/ /home/mani/yshirian/HIT/stat_26_N64_WV_k1_lowfilter16dx/
 
 #Initial condition (0: from U.bin,V.bin,W.bin  1:from Restart.bin  2:Everything Uniform 3:TaylorGreenX 4:TaylorGreenY 5:TaylorGreenZ)
 0

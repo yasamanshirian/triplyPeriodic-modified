@@ -14,7 +14,7 @@
 0 1
 
 #to filter the velocity in background #width of the filter based on the box sizei 4dx = 0.39265 8dx = 0.78529 16dx=1.57058
-1 0.78529
+1 1.57058
 
 #BorderSize (=1 for 2nd order central difference)
 1
@@ -23,7 +23,7 @@
 0
 
 #Tfinal #dt #threshold(to change parameters)
-1000 0.004 40000
+300 0.004 40000
 
 #statistics_calculation (1:on 0:off)  #statistics_print_to_screen (1:on 0:off)
 1 1
@@ -32,16 +32,16 @@
 125 125
 
 #data_saving_directory  #statistics_saving_directory
-/fastscratch/yshirian/data/data_26_N64_WV_k0p25_filter8dx/ /fastscratch/yshirian/data/stat_26_N64_WV_k0p25_filter8dx/
+/home/mani/yshirian/HIT/data_26_N64_WV_k0p5_lowfilter16dx_v1_mod/ /home/mani/yshirian/HIT/stat_26_N64_WV_k0p5_lowfilter16dx_v1_mod/
 
 #Initial condition (0: from U.bin,V.bin,W.bin  1:from Restart.bin  2:Everything Uniform 3:TaylorGreenX 4:TaylorGreenY 5:TaylorGreenZ)
-0
+1
 
 #Initial condition for C (0: from Scalar_Conecentration.bin  1:from Restart_Scalar_Conecentration.bin 2:Everything Uniform 3:TaylorGreenX 4:TaylorGreenY 5:TaylorGreenZ)
-0
+1
 
 #Initial condition for vector field(0: from V1.bin,V2.bin,V3.bin  1:from Restart.bin  2:Everything Uniform 3:TaylorGreenX 4:TaylorGreenY 5:TaylorGreenZ)
-0
+1
 
 #Preconditioner:(0:Nothing 1:AMG 2:Euclid)  #Solver(0:FFT 1:AMG 2:PCG 3:GMRES 4:FlexGMRES 5:LGMRES 6:BiCGSTAB)	
 0 0

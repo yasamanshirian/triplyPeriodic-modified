@@ -796,6 +796,8 @@ void grid::Update_RV_WOQ()
 {
      
    //interpolation
+  U.Equal_Divide(RU_int,Rho);
+
   V.Equal_Divide(RV_int,Rho_forV); //comupte v_int at faces (note: Rho_face is already computed from previous sub-step @ Compute_RHS_Pois)
   divergence.Equal_Div_F2C(V); //Divergence of v_int stored at cell center   Note: V at cell faces is already computed @Update_particle
   dummy2.Equal_Grad_C2F(divergence);
@@ -876,7 +878,9 @@ void grid::Update_RV_LES_WOQ()
   dummy.Equal_Del2(V_LES); //compute div(grad(v_i)) and store it in the dummy variable
   RHS_RV.Equal_LinComb(param_->eta0()/3.,dummy2,param_->eta0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
   //convection in x direction:
-  RV.Equal_LinComb(1,U,-1,U_tilde); //only to account small scales. Careful if you are using U in other functions !!!
+  U.Equal_Divide(RU_int,Rho);
+
+  RV.Equal_LinComb(1.,U,-1.,U_tilde); //only to account small scales. Careful if you are using U in other functions !!!
   dummy.Equal_I_C2F(RV_LES_int.x); //interpolate u to neighbour edges //Note:even though U&RU are stored on cell faces we use C2F interpolation here, should be careful!
   dummy2.Equal_Ix_C2F(RV); //interpolate RU in x direction (note : U_tilde is already computed in @FilterVelocity)
   dummy *= dummy2;

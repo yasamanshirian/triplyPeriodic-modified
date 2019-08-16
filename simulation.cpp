@@ -100,9 +100,13 @@ int main (int argc,char *argv[] )
       }
       if(PARAM.elongated_box() == 2){
         if(GRID.num_timestep % 100 == 0) GRID.CopyBox();
-      }
-      GRID.TimeAdvance();
 
+      }
+      
+      GRID.TimeAdvance();
+      if(PARAM.elongated_box() == 2 && GRID.num_timestep % 100 == 0 && PARAM.filtering()){
+      	GRID.FilterVelocity(); 	
+      }
           
       GRID.Statistics();
      
