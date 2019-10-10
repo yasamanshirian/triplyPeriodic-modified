@@ -191,6 +191,23 @@ void tensor1::Equal_Mult(tensor1 &a,tensor1 &b)
   y.Equal_Mult(a.y,b.y);
   z.Equal_Mult(a.z,b.z);
 }
+//My addition
+void tensor1::Equal_Mult(tensor1 &a,tensor0 &b)
+{
+  x.Equal_Mult(a.x,b);
+  y.Equal_Mult(a.y,b);
+  z.Equal_Mult(a.z,b);
+}
+
+
+void tensor1::Equal_Mult(tensor0 &a,tensor1 &b)
+{
+    x.Equal_Mult(a,b.x);
+    y.Equal_Mult(a,b.y);
+    z.Equal_Mult(a,b.z);
+}
+
+
 
 void tensor1::Equal_Mult(tensor1 &a,double b)
 {
@@ -299,6 +316,14 @@ void tensor1::make_mean_zero()
   y.make_mean_zero();
   z.make_mean_zero();
 }
+
+void tensor1::make_mean_U0(double* a)
+{
+    x.make_mean_U0(a[0]);
+    y.make_mean_U0(a[1]);
+    z.make_mean_U0(a[2]);
+}
+
 double tensor1::max()
 {
   double maxX=x.max();

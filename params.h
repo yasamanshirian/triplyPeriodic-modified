@@ -17,6 +17,8 @@ class params
   std::string Data_dir_; //data storage directory
   std::string Stat_dir_; //statistics storage directory
   int Initial_; //0:initial turbulence from U/V/W .bin  1: Restart.bin 2: everything is uniform  3: TaylorGreen
+  int Initial_C_; //0:initial turbulence from Scalar_Concentration.bin  1: Restart_Scalar_Concentration.bin
+  int Initial_V_;//0:initial turbulence from U/V/W .bin  1: Restart.bin 2: everything is uniform  3: TaylorGreen
   int PreCond_,Solver_; //determine preconditioner and solver
   bool cooling_; //0:if coling is off 1:if cooling is on
   int Iteration_,Iteration1_,Iteration2_; // Number of iteration in Poisson iterative solve before and after threshold
@@ -25,12 +27,20 @@ class params
   double epsilon_;
   //dimensional parameters
   double Lx_,Ly_,Lz_; //domain size
+  int elongated_box_;
+  int solve_for_scalar_,solve_for_vector_;
   double gx_,gy_,gz_,gx1_,gy1_,gz1_,gx2_,gy2_,gz2_; //gravitioanl forces
   double A_,A1_,A2_; //forcing coefficient befor and after threshold
   double Cp_,Cv_,R_; //specific heat coeffs.
   double Mu0_,k_; //Dynamic viscosity and conductivity
   double Rho0_; //Initial density 
-  double U0_; //Convective velocity
+  double U0_; //Convective velocity in x direction
+  double V0_; //Convective velocity in y direction
+  double W0_; //Convective velocity in z direction
+  double Rho_forV_; //Initial density 
+  double V0_1_; //Convective velocity in x direction
+  double V0_2_; //Convective velocity in y direction
+  double V0_3_; //Convective velocity in z direction
   double T0_; //Initial temperature
   double np0_; //particle number density
   double Dp_; //particle diameter
@@ -38,15 +48,23 @@ class params
   double Cvp_; //particel specific heat coeff.
   double epsilonp_; //particle emissivity
   double I0_,I01_,I02_; //lamp intensity
+  double D_M_;//Molecular diffusivity for passive scalar
+  double eta_;//Molecular diffusivity for vectro field
+  double s1t_;//, B_g_, K_g_;//source function parameters for scalar concentration transfer equation
+  double s2t_;//vector field source function
   double Nu_; //Nusselt number
   double Tp_; //Particle momentum relaxation time
   double mp_; //particle mass
   double P0_; //thermodynamic pressure
   double W_; //reference length = Ly
+  
  public:
   double Lx() const{ return Lx_; } 
   double Ly() const{ return Ly_; } 
   double Lz() const{ return Lz_; } 
+  double elongated_box() const{return elongated_box_;}
+  double solve_for_scalar() const{return solve_for_scalar_;}
+  double solve_for_vector() const{return solve_for_vector_;}
   double Tp() const{return Tp_;} //Particle momentum relaxation time
   double R() {return R_;}
   double P0() {return P0_;}
@@ -56,6 +74,12 @@ class params
   double I0() {return I0_;}
   double I01() {return I01_;}
   double I02() {return I02_;}
+  double D_M() {return D_M_;}
+  double S1_type() {return s1t_;}
+  double eta0() {return eta_;}
+  double S2_type() {return s2t_;}
+  //double B_g() {return B_g_;}
+  //double K_g() {return K_g_;}
   double epsilonp() {return epsilonp_;}
   double Cvp() {return Cvp_;}
   double Rhop() {return Rhop_;}
@@ -67,8 +91,14 @@ class params
   double Mu0() {return Mu0_;} 
   double T0() {return T0_;}
   double U0() {return U0_;}
+  double V0() {return V0_;}
+  double W0() {return W0_;}
+  double V0_1() {return V0_1_;}
+  double V0_2() {return V0_2_;}
+  double V0_3() {return V0_3_;}
   double Rho0() {return Rho0_;}
-
+  double Rho_forV() {return Rho_forV_;}
+ 
   double A() {return A_;}
   double A1() const{return A1_;}
   double A2() const{return A2_;}
@@ -92,6 +122,7 @@ class params
   double Fr() const { return U0_/sqrt(gz_*W_); } //assume gravity in z direction is the reference g
   double St() const { return N0()*mp_/(Lx_*Ly_*Lz_*Rho0_); }
   double Pr() const { return Mu0_*Cp_/k_; }
+  double Sc() const { return Rho0_/(Mu0_*D_M_);}
   double gamma() const { return Cp_/Cv_; }
   double GAMMA() const { return Cvp_/Cv_; }
 
@@ -109,6 +140,8 @@ class params
   bool Statistics() const{return Statistics_;}
   bool Stat_print() const{return Stat_print_;}
   int Initial() const{return Initial_;}
+  int Initial_C() const{return Initial_C_;}
+  int Initial_V() const{return Initial_V_;}
   int Iteration() {return Iteration_;}
   int Iteration1() const{return Iteration1_;}
   int Iteration2() const{return Iteration2_;}

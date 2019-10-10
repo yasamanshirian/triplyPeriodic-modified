@@ -30,6 +30,11 @@ class grid
   std::ofstream stat_TKE_U;
   std::ofstream stat_TKE_V;
   std::ofstream stat_TKE_W;
+  //std::ofstream stat_VV;
+  std::ofstream stat_TKEV_V1;
+  std::ofstream stat_TKEV_V2;
+  std::ofstream stat_TKEV_V3;
+  std::ofstream stat_Passive_Scalar_mean;
   std::ofstream stat_P0;
   std::ofstream stat_CMax;
   std::ofstream stat_CMin;
@@ -56,21 +61,42 @@ class grid
   tensor1 RU_WP; //momentum with pressure gradient effect (should match the divergence condition)
   tensor1 RHS_RU;
   tensor1 U; //u stored at cell center
+  //tensor1 UC; //concentration *u stored at cell faces
+  tensor1 RV; //rho*u stored at cell faces
+  tensor1 RV_int; //previous RK4 substep value
+  tensor1 RV_new; //next RK4 substep value
+  tensor1 RV_np1; //next timestep value
+  tensor1 RV_WQ; //momentum with pressure gradient effect (should match the divergence condition)
+  tensor1 RHS_RV;
+  tensor1 V; //u stored at cell center
   tensor0 P; //pressure stored at cell center
   tensor0 dP; //pressure delta form (used in Poisson equation) stored at cell center
+  tensor0 Q;
+  tensor0 dQ;
   tensor0 RHS_Pois; //one part of RHS of Poisson equation
+  tensor0 RHS_Pois_Q;
   tensor0 C; //particle concentration stored at cell center
+  tensor0 Passive_Scalar; //scalar concentration stored at cell center
+  tensor0 S1;//source function in scalar momentum equation
+  tensor1 S2;//vector source for vector field momentum equation
+  tensor0 Passive_Scalar_int;
+  tensor0 Passive_Scalar_new;
+  tensor0 Passive_Scalar_np1;
   tensor0 Rho; //Gas density stored at cell center
   tensor0 Rho_int;
   tensor0 Rho_new;
   tensor0 Rho_np1;
   tensor0 RHS_Rho;
+  tensor0 RHS_Passive_Scalar;
   tensor1 Rho_face; //Gas density stored at cell faces
+  tensor1 Passive_Scalar_face;//scalar concentration stored at cell faces
   tensor0 T; //Gas temperature stored at cell cneter
   tensor1 dummy; //dummt array for computations
   tensor1 dummy2; //dummt array for computations
+  //tensor0 dummyS; //dummt array for computations on tensor0
   tensor0 divergence; //to store divergence of momentum/velocity
   tensor0 RHS_Part_Temp; //Interpolated RHS of particle energy equation (due to the algorithm it has to be saved)
+  double Rho_forV;
   double P0; // mean thermodynamic pressure
   double P0_int;
   double P0_new;
@@ -87,16 +113,26 @@ class grid
   void Store();
   void TimeAdvance(); //advance one time step
   void Update_Rho();
+  void Update_Passive_Scalar();
+  void C_Source(double);
   void Update_RU_WOP();
   void Update_P0();
   void Compute_Div_U_new();
   void Compute_RHS_Pois();
   void Solve_Poisson();
   void Update_RU_WP();
+  void V_Source(double);
+  void Update_RV_WOQ();
+  //void Update_P0();
+  void Compute_Div_V_new();
+  void Compute_RHS_Pois_Q();
+  void Solve_Poisson_Q();
+  void Update_RV_WQ();
   void TimeAdvance_RK4();
   void Test_Poisson();
   void Update_Particle();
   void Statistics();
+  void CopyBox();//copy box in x direction , multiple times
   bool Touch(); //=0/1 in touch.check (1: exit code now, 0: contunue) this function actually read from file
 };
 #endif               

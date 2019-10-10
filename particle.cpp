@@ -47,8 +47,8 @@ particle::~particle()
   delete []Sbuf1;
   delete []Rbuf0;
   delete []Rbuf1;
-  if (pc_->IsRoot())
-    {
+  if (pc_->IsRoot()){
+    
       delete []Nps;
       if (param_->Statistics())
 	stat_trajectory.close();

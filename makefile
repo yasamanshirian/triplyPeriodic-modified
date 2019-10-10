@@ -1,25 +1,27 @@
 OBJS=simulation.o proc.o params.o gridsize.o particle.o tensor0.o tensor1.o  poisson.o communicator.o grid.o
-CPP=mpicxx
+CPP=mpiicc
 CFLAGS=-O3
-FFT_DIR=/Users/Yassi/Applications/tools/fft
-FFTW_DIR=/Users/Yassi/Applications/tools/fftw-2.1.5
-HYPRE_DIR=/Users/Yassi/Applications/tools/hypre-2.11.2/src/hypre
+FFT_DIR=/home/mani/yshirian/tools/fft
+FFTW_DIR=/home/mani/yshirian/tools/fftw-2.1.5
+HYPRE_DIR=/home/mani/yshirian/tools/HYPRE
+
 CINCLUDES=-I $(HYPRE_DIR)/include -I $(FFTW_DIR)/include
-CDEFS=-DHAVE_CONFIG_H -DHYPRE_TIMING -DFFT_FFTW
+CDEFS = -DHAVE_CONFIG_H -DHYPRE_TIMING -DFFT_FFTW
 CFLAGS2=$(CFLAGS) $(CDEFS)
-LFLAGS=-L $(FFT_DIR)/ -L $(FFTW_DIR)/lib -L $(HYPRE_DIR)/lib
+LFLAGS=-L $(FFT_DIR)/Obj_certainty -L $(FFTW_DIR)/lib -L $(HYPRE_DIR)/lib
 LIBS=-lfft -lfftw -lfftw_mpi -lHYPRE -lm -lstdc++
 
 
-default: box
+#default box_k0 ElongatedBox_k05 ElongatedBox_k025 box_k1 box_k2 box_k4 box_k8 
+all: $(EXEC)
 
-box: $(OBJS)
-	$(CPP) $(CFLAGS2) $(CINCLUDES) -o box $(OBJS) $(LFLAGS) $(LIBS)
+$(EXEC): $(OBJS)
+	$(CPP) $(CFLAGS2) $(CINCLUDES) -o $@ $(OBJS) $(LFLAGS) $(LIBS)
 
-simulation.o: simulation.cpp proc.h proc.cpp params.h params.cpp gridsize.h gridsize.cpp tensor0.h tensor0.cpp tensor1.h tensor1.cpp communicator.h communicator.cpp grid.h grid.cpp particle.h particle.cpp
+simulation.o: simulation.cpp proc.h proc.cpp params.h params.cpp gridsize.h gridsize.cpp tensor0.h tensor0.cpp tensor1.h tensor1.cpp communicator.h communicator.cpp scalar_source.h vector_source.h grid.h grid.cpp particle.h particle.cpp
 	$(CPP) $(CFLAGS2) $(CINCLUDES) -c simulation.cpp
 
-grid.o: proc.h proc.cpp params.h params.cpp gridsize.h gridsize.cpp tensor0.h tensor0.cpp tensor1.h tensor1.cpp poisson.h poisson.cpp communicator.h communicator.cpp grid.h grid.cpp particle.h particle.cpp
+grid.o: proc.h proc.cpp params.h params.cpp gridsize.h gridsize.cpp tensor0.h tensor0.cpp tensor1.h tensor1.cpp poisson.h poisson.cpp communicator.h communicator.cpp scalar_source.h vector_source.h grid.h grid.cpp particle.h particle.cpp
 	$(CPP) $(CFLAGS2) $(CINCLUDES) -c grid.cpp
 
 communicator.o: proc.h proc.cpp params.h params.cpp gridsize.h gridsize.cpp tensor0.h tensor0.cpp tensor1.h tensor1.cpp communicator.h communicator.cpp
@@ -47,4 +49,4 @@ proc.o: proc.h proc.cpp
 	$(CPP) $(CFLAGS) -c proc.cpp
 
 clean:
-	rm -rf *.o box
+	rm -rf *.o $(EXEC)

@@ -49,6 +49,8 @@ class tensor0
   double sum(); //return sum of all elements in T
   double mean(); //return mean value of T
   void make_mean_zero(); //make mean zero
+  void make_mean_U0(double); //make mean of U=U0
+  void kill_strong_modes(); //substarct velocity with wave numbers smaller than one in duct stretched in x direcion
   double max(); //return maximum value
   double max_abs(); //return maximum of absolute value of elements
   double min(); //return minimum value
