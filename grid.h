@@ -32,6 +32,7 @@ class grid
   int in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi; 
   int bs_;
   FFT_DATA *kernel_fft;
+  FFT_DATA *operator_fft;
   tensor_fft U_fft;
   fft_plan_3d *plan; 
   fft_plan_3d *plan_kernel;
@@ -85,8 +86,8 @@ class grid
   tensor1 RHS_RV;
   tensor1 V; //u stored at cell center
   tensor1 V_LES; // v from filtered velocity background 
-  tensor1 OperatorSGS: //Sub grid scale operator for cases with filtered tarnsporter
-  tensor1 operator_fft; //Suggested operator form for high wave numbers for sub grid scale diffusion operator
+  tensor1 OperatorSGS; //Sub grid scale operator for cases with filtered tarnsporter
+  
   tensor0 P; //pressure stored at cell center
   tensor0 dP; //pressure delta form (used in Poisson equation) stored at cell center
   tensor0 Q;
@@ -162,7 +163,9 @@ class grid
   void Compute_RHS_Pois_Q_LES();
   void Solve_Poisson_Q_LES();
   void Update_RV_LES_WQ();
+  void Compute_HighKOperator();
   
+  void SubGridOperator();
   void TimeAdvance_RK4();
   //void Test_Poisson();
   //void Update_Particle();

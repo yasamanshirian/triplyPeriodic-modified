@@ -11,7 +11,7 @@
 #include "scalar_source.h"
 #include "vector_source.h"
 
-grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),U_tilde(s,com),RV(s,com),RV_int(s,com),RV_new(s,com),RV_np1(s,com),RV_LES(s,com),RV_LES_int(s,com),RV_LES_new(s,com),RV_LES_np1(s,com),Passive_Scalar_int(s,com),Passive_Scalar_new(s,com),Passive_Scalar_np1(s,com),Passive_Scalar_face(s,com),Passive_Scalar(s,com),Passive_Scalar_LES_int(s,com),Passive_Scalar_LES_new(s,com),Passive_Scalar_LES_np1(s,com),Passive_Scalar_LES(s,com),RHS_Passive_Scalar(s,com), S1(s,com), S2(s,com), RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),RHS_RV(s,com),V(s,com),V_LES(s,com), Q(s,com),RHS_Pois_Q(s,com),RHS_Pois_Q_LES(s,com),OperatorSGS(s,com), operator_fft(s,com),divergence(s,com),dummy(s,com),dummy2(s,com),PS_(p,pc,s,com){
+grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s,com),RU_new(s,com),RU_np1(s,com),U_tilde(s,com),RV(s,com),RV_int(s,com),RV_new(s,com),RV_np1(s,com),RV_LES(s,com),RV_LES_int(s,com),RV_LES_new(s,com),RV_LES_np1(s,com),Passive_Scalar_int(s,com),Passive_Scalar_new(s,com),Passive_Scalar_np1(s,com),Passive_Scalar_face(s,com),Passive_Scalar(s,com),Passive_Scalar_LES_int(s,com),Passive_Scalar_LES_new(s,com),Passive_Scalar_LES_np1(s,com),Passive_Scalar_LES(s,com),RHS_Passive_Scalar(s,com), S1(s,com), S2(s,com), RU_WP(s,com),RHS_RU(s,com),U(s,com),P(s,com),dP(s,com),RHS_Pois(s,com),RHS_RV(s,com),V(s,com),V_LES(s,com), Q(s,com),RHS_Pois_Q(s,com),RHS_Pois_Q_LES(s,com),OperatorSGS(s,com), divergence(s,com),dummy(s,com),dummy2(s,com),PS_(p,pc,s,com){
   size_=s;
   param_=p;
   pc_=pc;
@@ -49,6 +49,13 @@ grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s
          
   kernel_fft =new FFT_DATA[nbuff_fft];
   
+  operator_fft = new FFT_DATA[nbuff_fft]; //suggested sub grid operator for cases with filtered transprtee 
+  //operator_fft.y = new FFT_DATA[nbuff_fft];
+  //operator_fft.z = new FFT_DATA[nbuff_fft];
+         
+ 
+  
+
   Compute_HighKOperator();
   if (pc->IsRoot())
     {
@@ -89,6 +96,7 @@ grid::~grid()
   delete[] U_fft.y;
   delete[] U_fft.z;
   delete[] kernel_fft;
+  delete[] operator_fft;
   
   if (pc_->IsRoot())
     {
@@ -700,14 +708,14 @@ void grid::Compute_HighKOperator()
     for (int j=in_jlo;j<=out_jhi;j++)
       for (int i=in_ilo;i<=out_ihi;i++)
          {
-          operator_fft.x[count].im=0;
-          operator_fft.x[count].re=1.;
+          operator_fft[count].im=0;
+          operator_fft[count++].re=1.;
 	  
-          operator_fft.y[count].im=0;
-          operator_fft.y[count].re=1.;
+          //operator_fft.y[count].im=0;
+          //operator_fft.y[count].re=1.;
 	  
-          operator_fft.z[count].im=0;
-          operator_fft.z[count++].re=1.;
+          //operator_fft.z[count].im=0;
+          //operator_fft.z[count++].re=1.;
 	  
          }
   
@@ -744,14 +752,14 @@ void grid::SubGridOperator()
     for (int j=in_jlo;j<=in_jhi;j++)
       for (int i=in_ilo;i<=in_ihi;i++)
         {
-          U_fft.x[count].im = -i**2*(U_fft.x[count].re*operator_fft[count].im + U_fft.x[count].im*operator_fft[count].re);
-	  U_fft.x[count].re = i**2*(U_fft.x[count].im*oprator_fft[count].im - U_fft.x[count].re*operator_fft[count].re);
+          U_fft.x[count].im = -i*i*(U_fft.x[count].re*operator_fft[count].im + U_fft.x[count].im*operator_fft[count].re);
+	  U_fft.x[count].re = i*i*(U_fft.x[count].im*operator_fft[count].im - U_fft.x[count].re*operator_fft[count].re);
           
-	  U_fft.y[count].im = -j**2*(U_fft.y[count].re*operator_fft[count].im + U_fft.y[count].im*operator_fft[count].re);
-          U_fft.y[count].re = j**2*(U_fft.y[count].im*operator_fft[count].im - U_fft.y[count].re*operator_fft[count].re);
+	  U_fft.y[count].im = -j*j*(U_fft.y[count].re*operator_fft[count].im + U_fft.y[count].im*operator_fft[count].re);
+          U_fft.y[count].re = j*j*(U_fft.y[count].im*operator_fft[count].im - U_fft.y[count].re*operator_fft[count].re);
           
-	  U_fft.z[count].im = -k**2*(U_fft.z[count].re*operator_fft[count].im + U_fft.z[count].im*operator_fft[count].re);
-          U_fft.z[count].re = k**2*(U_fft.z[count].im*operator_fft[count].im - U_fft.z[count].re*operator_fft[count].re);
+	  U_fft.z[count].im = -k*k*(U_fft.z[count].re*operator_fft[count].im + U_fft.z[count].im*operator_fft[count].re);
+          U_fft.z[count].re = k*k*(U_fft.z[count].im*operator_fft[count].im - U_fft.z[count].re*operator_fft[count].re);
           count++;
           
 	}
@@ -972,8 +980,8 @@ void grid::Update_RV_LES_WOQ()
   //dummy2.Equal_Grad_C2F(divergence);
   dummy.Equal_Del2(V_LES); //compute div(grad(v_i)) and store it in the dummy variable
   //RHS_RV.Equal_LinComb(param_->eta0()/3.,dummy2,param_->eta0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
-  SubGridOperator()
-  RHS_RV.Equal_LinComb(param_->eta0(),OperatorSGS)
+  SubGridOperator();
+  RHS_RV.Equal_Mult(param_->eta0(),OperatorSGS);
   //convection in x direction:
   U.Equal_Divide(RU_int,Rho);
 
