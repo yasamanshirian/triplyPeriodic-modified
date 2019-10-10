@@ -783,6 +783,7 @@ void grid::V_Source(double T)
                 X=i*size_->dx()+size_->dx()/2.;
                 Y=j*size_->dy()+size_->dy()/2.;
                 Z=k*size_->dz()+size_->dz()/2.;
+
 		S2.x(I,J,K) = Vector_Source_x(X-size_->dx()/2.,Y,Z,T);
                 S2.y(I,J,K) = Vector_Source_y(X,Y-size_->dy()/2.,Z,T);
                 S2.z(I,J,K) = Vector_Source_z(X,Y,Z-size_->dz()/2.,T);
@@ -880,21 +881,21 @@ void grid::Update_RV_LES_WOQ()
   //convection in x direction:
   U.Equal_Divide(RU_int,Rho);
 
-  RV.Equal_LinComb(1.,U,-1.,U_tilde); //only to account small scales. Careful if you are using U in other functions !!!
+  //RV.Equal_LinComb(1.,U,-1.,U_tilde); //only to account small scales. Careful if you are using U in other functions !!!
   dummy.Equal_I_C2F(RV_LES_int.x); //interpolate u to neighbour edges //Note:even though U&RU are stored on cell faces we use C2F interpolation here, should be careful!
-  dummy2.Equal_Ix_C2F(RV); //interpolate RU in x direction (note : U_tilde is already computed in @FilterVelocity)
+  dummy2.Equal_Ix_C2F(U_tilde); //interpolate RU in x direction (note : U_tilde is already computed in @FilterVelocity)
   dummy *= dummy2;
   dummy2.x.Equal_Div_F2C(dummy);
   RHS_RV.x -= dummy2.x;
   //convection in y direction:
   dummy.Equal_I_C2F(RV_LES_int.y); //interpolate u to neighbour edges
-  dummy2.Equal_Iy_C2F(RV); //interpolate RU in x direction (note : U_tilde is already computed in @FilterVelocity)
+  dummy2.Equal_Iy_C2F(U_tilde); //interpolate RU in x direction (note : U_tilde is already computed in @FilterVelocity)
   dummy *= dummy2;
   dummy2.y.Equal_Div_F2C(dummy);
   RHS_RV.y -= dummy2.y;
   //convection in z direction:
   dummy.Equal_I_C2F(RV_LES_int.z); //interpolate u to neighbour edges
-  dummy2.Equal_Iz_C2F(RV); //interpolate RU in x direction (note : U_tilde is already computed in @FilterVelocity)
+  dummy2.Equal_Iz_C2F(U_tilde); //interpolate RU in x direction (note : U_tilde is already computed in @FilterVelocity)
   dummy *= dummy2;
   dummy2.z.Equal_Div_F2C(dummy);
   RHS_RV.z -= dummy2.z;

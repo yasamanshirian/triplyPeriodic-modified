@@ -3,7 +3,7 @@
 #include <math.h> 
 double Scalar_Source(double x, double y, double z , double t){
 	double A = 1.;
-        double k = 8.;
-	return A*cos(k*x);
+        //double k = 0.25;
+	return A*(cos(8*x));
 }
 #endif
