@@ -85,6 +85,8 @@ class grid
   tensor1 RHS_RV;
   tensor1 V; //u stored at cell center
   tensor1 V_LES; // v from filtered velocity background 
+  tensor1 OperatorSGS: //Sub grid scale operator for cases with filtered tarnsporter
+  tensor1 operator_fft; //Suggested operator form for high wave numbers for sub grid scale diffusion operator
   tensor0 P; //pressure stored at cell center
   tensor0 dP; //pressure delta form (used in Poisson equation) stored at cell center
   tensor0 Q;
