@@ -980,8 +980,16 @@ void grid::Update_RV_LES_WOQ()
   //dummy2.Equal_Grad_C2F(divergence);
   dummy.Equal_Del2(V_LES); //compute div(grad(v_i)) and store it in the dummy variable
   //RHS_RV.Equal_LinComb(param_->eta0()/3.,dummy2,param_->eta0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
-  SubGridOperator();
-  RHS_RV.Equal_Mult(param_->eta0(),OperatorSGS);
+  if (param_->sgs_operator())
+  {
+  	SubGridOperator();
+  	RHS_RV.Equal_LinComb(param_->eta0(), dummy,param_->eta_sgs(),OperatorSGS);
+  }
+  else {
+
+   RHS_RV.Equal_Mult(param_->eta0(), dummy);
+  
+  }
   //convection in x direction:
   U.Equal_Divide(RU_int,Rho);
 

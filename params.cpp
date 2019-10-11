@@ -26,6 +26,7 @@ params::params(char *address)
   param_trimmed_in>>solve_for_scalar_;
   param_trimmed_in>>solve_for_vector_;
   param_trimmed_in>>filtering_>>kernel_size_;
+  param_trimmed_in>>sgs_operator_;
   param_trimmed_in>>bs_;
   param_trimmed_in>>Np_track_;
   param_trimmed_in>>T_final_>>dt_>>threshold_;
@@ -55,7 +56,7 @@ params::params(char *address)
   param_trimmed_in>>Nu_;
   param_trimmed_in>>I01_>>I02_;
   param_trimmed_in>>D_M_;
-  param_trimmed_in>>eta_;
+  param_trimmed_in>>eta_>>eta_sgs_;
   param_trimmed_in>>s1t_;//>>B_g_>>K_g_;
   param_trimmed_in>>s2t_;
   //initially update parameters

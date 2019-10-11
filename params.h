@@ -30,6 +30,7 @@ class params
   int elongated_box_;
   int solve_for_scalar_,solve_for_vector_;
   int filtering_; // filter=0(No filtering) otw have filtering for background velocity
+  int sgs_operator_; // 1: we are adding operator for sgs, 0: no operator for sgs
   double kernel_size_; //size of the filter ( width)
   double gx_,gy_,gz_,gx1_,gy1_,gz1_,gx2_,gy2_,gz2_; //gravitioanl forces
   double A_,A1_,A2_; //forcing coefficient befor and after threshold
@@ -51,7 +52,7 @@ class params
   double epsilonp_; //particle emissivity
   double I0_,I01_,I02_; //lamp intensity
   double D_M_;//Molecular diffusivity for passive scalar
-  double eta_;//Molecular diffusivity for vectro field
+  double eta_,eta_sgs_;//Molecular diffusivity for vectro field and diffusivity for SGS
   double s1t_;//, B_g_, K_g_;//source function parameters for scalar concentration transfer equation
   double s2t_;//vector field source function
   double Nu_; //Nusselt number
@@ -69,6 +70,7 @@ class params
   double solve_for_vector() const{return solve_for_vector_;}
   double filtering() const{return filtering_;}
   double kernel_size() const{return kernel_size_;}
+  double sgs_operator() {return sgs_operator_;}
   double Tp() const{return Tp_;} //Particle momentum relaxation time
   double R() {return R_;}
   double P0() {return P0_;}
@@ -81,6 +83,7 @@ class params
   double D_M() {return D_M_;}
   double S1_type() {return s1t_;}
   double eta0() {return eta_;}
+  double eta_sgs() {return eta_sgs_;}
   double S2_type() {return s2t_;}
   //double B_g() {return B_g_;}
   //double K_g() {return K_g_;}
