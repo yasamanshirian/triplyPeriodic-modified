@@ -39,6 +39,7 @@ grid::grid(gridsize* s,params* p,proc *pc,communicator* com): RU(s,com),RU_int(s
   out_klo=in_klo;
   out_khi=in_khi;
   bs_=size_->bs();
+  
   nbuff_fft = (in_ihi-in_ilo)*(in_jhi-in_jlo)*(in_khi-in_klo);
   plan_kernel=fft_3d_create_plan(MPI_COMM_WORLD,size_->Nx_tot(),size_->Ny_tot(),size_->Nz_tot(),in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&nbuff_fft);
   plan=fft_3d_create_plan(MPI_COMM_WORLD,size_->Nx_tot(),size_->Ny_tot(),size_->Nz_tot(),in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,0,0,&nbuff_fft);
@@ -704,12 +705,23 @@ void grid::ConstructKernel()
 void grid::Compute_HighKOperator()
 {
   int count=0;
+  int k_;
+  double TWO_PI(2*3.141592653589793);
+
+  double Two_PI_Over_Lx = TWO_PI/size_->Lx();
+  double Two_PI_Over_Ly = TWO_PI/size_->Ly();
+  double Two_PI_Over_Lz = TWO_PI/size_->Lz();
+
   for (int k=in_klo;k<=in_khi;k++)
     for (int j=in_jlo;j<=out_jhi;j++)
       for (int i=in_ilo;i<=out_ihi;i++)
          {
+          ii=((i<nx/2)?i:i-nx)*Two_PI_Over_Lx;
+	  jj=((j<ny/2)?j:j-ny);Two_PI_Over_Ly;
+	  kk=((k<nz/2)?k:k-nz);Two_PI_Over_Lz;
+	  k_ = ii*ii + jj*jj + kk*kk;
           operator_fft[count].im=0;
-          operator_fft[count++].re=1.;
+          operator_fft[count++].re=1./sqrt(1.+(param_->l()**2)*k_);
 	  
           //operator_fft.y[count].im=0;
           //operator_fft.y[count].re=1.;
@@ -727,7 +739,13 @@ void grid::Compute_HighKOperator()
 void grid::SubGridOperator()
 {
 
-  
+  double TWO_PI(2*3.141592653589793);
+
+  double Two_PI_Over_Lx = TWO_PI/size_->Lx();
+  double Two_PI_Over_Ly = TWO_PI/size_->Ly();
+  double Two_PI_Over_Lz = TWO_PI/size_->Lz();
+
+
   int count=0;
   for (int k=in_klo;k<=in_khi;k++)
     for (int j=in_jlo;j<=out_jhi;j++)
@@ -748,18 +766,34 @@ void grid::SubGridOperator()
   fft_3d(U_fft.y,U_fft.y,1,plan);
   fft_3d(U_fft.z,U_fft.z,1,plan);
   count=0;
+  int nx = size_->Nx_tot();
+  int ny = size_->Ny_tot();
+  int nz = size_->Nz_tot();
+  double dx = size_->dx();
+  double dy = size_->dy();
+  double dz = size_->dz();
+  double dx2=2./(dx*dx);
+  double dy2=2./(dy*dy);
+  double dz2=2./(dz*dz);
+  
+  int ii,jj,kk;
+  double k_;
   for (int k=in_klo;k<=in_khi;k++)
     for (int j=in_jlo;j<=in_jhi;j++)
       for (int i=in_ilo;i<=in_ihi;i++)
         {
-          U_fft.x[count].im = -i*i*(U_fft.x[count].re*operator_fft[count].im + U_fft.x[count].im*operator_fft[count].re);
-	  U_fft.x[count].re = i*i*(U_fft.x[count].im*operator_fft[count].im - U_fft.x[count].re*operator_fft[count].re);
+          ii=((i<nx/2)?i:i-nx)*Two_PI_Over_Lx;
+	  jj=((j<ny/2)?j:j-ny);Two_PI_Over_Ly;
+	  kk=((k<nz/2)?k:k-nz);Two_PI_Over_Lz;
+	  k_ = ((dx2)*(1-cos(ii*dx))+(dy2)*(1-cos(jj*dy))+(dz2)*(1-cos(kk*dz)));//ii*ii + jj*jj + kk*kk;
+          U_fft.x[count].im = k_*(U_fft.x[count].re*operator_fft[count].im + U_fft.x[count].im*operator_fft[count].re);
+	  U_fft.x[count].re = k_*(-U_fft.x[count].im*operator_fft[count].im + U_fft.x[count].re*operator_fft[count].re);
           
-	  U_fft.y[count].im = -j*j*(U_fft.y[count].re*operator_fft[count].im + U_fft.y[count].im*operator_fft[count].re);
-          U_fft.y[count].re = j*j*(U_fft.y[count].im*operator_fft[count].im - U_fft.y[count].re*operator_fft[count].re);
+	  U_fft.y[count].im = k_*(U_fft.y[count].re*operator_fft[count].im + U_fft.y[count].im*operator_fft[count].re);
+          U_fft.y[count].re = k_*(-U_fft.y[count].im*operator_fft[count].im + U_fft.y[count].re*operator_fft[count].re);
           
-	  U_fft.z[count].im = -k*k*(U_fft.z[count].re*operator_fft[count].im + U_fft.z[count].im*operator_fft[count].re);
-          U_fft.z[count].re = k*k*(U_fft.z[count].im*operator_fft[count].im - U_fft.z[count].re*operator_fft[count].re);
+	  U_fft.z[count].im = k_*(U_fft.z[count].re*operator_fft[count].im + U_fft.z[count].im*operator_fft[count].re);
+          U_fft.z[count].re = k_*(-U_fft.z[count].im*operator_fft[count].im + U_fft.z[count].re*operator_fft[count].re);
           count++;
           
 	}
@@ -781,9 +815,9 @@ void grid::SubGridOperator()
        for (int i=in_ilo;i<=in_ihi;i++)
          {
          
-           OperatorSGS.x(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_)=U_fft.x[count].re/(tot);
-           OperatorSGS.y(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_)=U_fft.y[count].re/(tot);
-           OperatorSGS.z(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_)=U_fft.z[count++].re/(tot);
+           OperatorSGS.x(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_)=(-1)*U_fft.x[count].re/(tot);
+           OperatorSGS.y(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_)=(-1)*U_fft.y[count].re/(tot);
+           OperatorSGS.z(i-in_ilo+bs_,j-in_jlo+bs_,k-in_klo+bs_)=(-1)*U_fft.z[count++].re/(tot);
            
 
 
@@ -824,7 +858,9 @@ void grid::FilterVelocity()
   for (int k=in_klo;k<=in_khi;k++)
     for (int j=in_jlo;j<=in_jhi;j++)
       for (int i=in_ilo;i<=in_ihi;i++)
-        {
+        {     
+
+             
           U_fft.x[count].im = U_fft.x[count].re*kernel_fft[count].im + U_fft.x[count].im*kernel_fft[count].re;
 	  U_fft.x[count].re = -U_fft.x[count].im*kernel_fft[count].im + U_fft.x[count].re*kernel_fft[count].re;
           
@@ -980,16 +1016,13 @@ void grid::Update_RV_LES_WOQ()
   //dummy2.Equal_Grad_C2F(divergence);
   dummy.Equal_Del2(V_LES); //compute div(grad(v_i)) and store it in the dummy variable
   //RHS_RV.Equal_LinComb(param_->eta0()/3.,dummy2,param_->eta0(),dummy); //RHS = -mp/Vcell*RHS + mu/3*grad(div(U)) + mu*div(grad(U))
+  //std::cout<<"INside RV_LES update"<<std::endl;
   if (param_->sgs_operator())
-  {
+  {     //std::cout<<"inside sgs"<<std::endl;
   	SubGridOperator();
   	RHS_RV.Equal_LinComb(param_->eta0(), dummy,param_->eta_sgs(),OperatorSGS);
   }
-  else {
-
-   RHS_RV.Equal_Mult(param_->eta0(), dummy);
-  
-  }
+  else RHS_RV.Equal_Mult(param_->eta0(), dummy);
   //convection in x direction:
   U.Equal_Divide(RU_int,Rho);
 

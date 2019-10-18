@@ -45,7 +45,7 @@ int main (int argc,char *argv[] )
   RhoV_[1]=V_mean[1]*Rho0_forV;
   RhoV_[2]=V_mean[2]*Rho0_forV;
   
-  
+  //std::cout <<"Bfore params"<<std::endl; 
   proc PROC;
   gridsize GSIZE(&PARAM,&PROC);
   communicator COMM(&GSIZE,&PARAM,&PROC);

@@ -53,6 +53,7 @@ class params
   double I0_,I01_,I02_; //lamp intensity
   double D_M_;//Molecular diffusivity for passive scalar
   double eta_,eta_sgs_;//Molecular diffusivity for vectro field and diffusivity for SGS
+  double l_; // l_t inside MFM operator
   double s1t_;//, B_g_, K_g_;//source function parameters for scalar concentration transfer equation
   double s2t_;//vector field source function
   double Nu_; //Nusselt number
@@ -70,7 +71,7 @@ class params
   double solve_for_vector() const{return solve_for_vector_;}
   double filtering() const{return filtering_;}
   double kernel_size() const{return kernel_size_;}
-  double sgs_operator() {return sgs_operator_;}
+  double sgs_operator() const{return sgs_operator_;}
   double Tp() const{return Tp_;} //Particle momentum relaxation time
   double R() {return R_;}
   double P0() {return P0_;}
@@ -85,6 +86,7 @@ class params
   double eta0() {return eta_;}
   double eta_sgs() {return eta_sgs_;}
   double S2_type() {return s2t_;}
+  double l()  {return l_;}
   //double B_g() {return B_g_;}
   //double K_g() {return K_g_;}
   double epsilonp() {return epsilonp_;}
