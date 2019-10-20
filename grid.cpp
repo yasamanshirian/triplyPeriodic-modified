@@ -705,13 +705,16 @@ void grid::ConstructKernel()
 void grid::Compute_HighKOperator()
 {
   int count=0;
-  int k_;
+  int k_,ii,jj,kk;
   double TWO_PI(2*3.141592653589793);
 
   double Two_PI_Over_Lx = TWO_PI/size_->Lx();
   double Two_PI_Over_Ly = TWO_PI/size_->Ly();
   double Two_PI_Over_Lz = TWO_PI/size_->Lz();
-
+  int nx = size_->Nx_tot();
+  int ny = size_->Ny_tot();
+  int nz = size_->Nz_tot();
+  double l = param_->l();
   for (int k=in_klo;k<=in_khi;k++)
     for (int j=in_jlo;j<=out_jhi;j++)
       for (int i=in_ilo;i<=out_ihi;i++)
@@ -721,7 +724,7 @@ void grid::Compute_HighKOperator()
 	  kk=((k<nz/2)?k:k-nz);Two_PI_Over_Lz;
 	  k_ = ii*ii + jj*jj + kk*kk;
           operator_fft[count].im=0;
-          operator_fft[count++].re=1./sqrt(1.+(param_->l()**2)*k_);
+          operator_fft[count++].re=1./sqrt(1.+l*l*k_);
 	  
           //operator_fft.y[count].im=0;
           //operator_fft.y[count].re=1.;
