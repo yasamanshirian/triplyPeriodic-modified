@@ -32,7 +32,7 @@
 125 125 
 
 #data_saving_directory  #statistics_saving_directory
-/home/mani/yshirian/HIT/data_26_N64_WV_SGSoperator_k1-4_filter16dx/ /home/mani/yshirian/HIT/stat_26_N64_WV_SGSoperator_k1-4_filter16dx/
+/home/mani/yshirian/data/data_26_N64_WV_SGSoperator_k1-4_filter16dx/ /home/mani/yshirian/data/stat_26_N64_WV_SGSoperator_k1-4_filter16dx/
 
 #Initial condition (0: from U.bin,V.bin,W.bin  1:from Restart.bin  2:Everything Uniform 3:TaylorGreenX 4:TaylorGreenY 5:TaylorGreenZ)
 0
